@@ -2946,966 +2946,1159 @@ return exports;
  * @overview es6-promise - a tiny implementation of Promises/A+.
  * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
  * @license   Licensed under MIT license
- *            See https://raw.githubusercontent.com/jakearchibald/es6-promise/master/LICENSE
- * @version   3.2.1
+ *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
+ * @version   3.3.1
  */
 
-(function() {
-    "use strict";
-    function lib$es6$promise$utils$$objectOrFunction(x) {
-      return typeof x === 'function' || (typeof x === 'object' && x !== null);
-    }
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global.ES6Promise = factory());
+}(this, (function () { 'use strict';
 
-    function lib$es6$promise$utils$$isFunction(x) {
-      return typeof x === 'function';
-    }
+function objectOrFunction(x) {
+  return typeof x === 'function' || typeof x === 'object' && x !== null;
+}
 
-    function lib$es6$promise$utils$$isMaybeThenable(x) {
-      return typeof x === 'object' && x !== null;
-    }
+function isFunction(x) {
+  return typeof x === 'function';
+}
 
-    var lib$es6$promise$utils$$_isArray;
-    if (!Array.isArray) {
-      lib$es6$promise$utils$$_isArray = function (x) {
-        return Object.prototype.toString.call(x) === '[object Array]';
-      };
+var _isArray = undefined;
+if (!Array.isArray) {
+  _isArray = function (x) {
+    return Object.prototype.toString.call(x) === '[object Array]';
+  };
+} else {
+  _isArray = Array.isArray;
+}
+
+var isArray = _isArray;
+
+var len = 0;
+var vertxNext = undefined;
+var customSchedulerFn = undefined;
+
+var asap = function asap(callback, arg) {
+  queue[len] = callback;
+  queue[len + 1] = arg;
+  len += 2;
+  if (len === 2) {
+    // If len is 2, that means that we need to schedule an async flush.
+    // If additional callbacks are queued before the queue is flushed, they
+    // will be processed by this flush that we are scheduling.
+    if (customSchedulerFn) {
+      customSchedulerFn(flush);
     } else {
-      lib$es6$promise$utils$$_isArray = Array.isArray;
+      scheduleFlush();
     }
+  }
+};
+
+function setScheduler(scheduleFn) {
+  customSchedulerFn = scheduleFn;
+}
+
+function setAsap(asapFn) {
+  asap = asapFn;
+}
+
+var browserWindow = typeof window !== 'undefined' ? window : undefined;
+var browserGlobal = browserWindow || {};
+var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && ({}).toString.call(process) === '[object process]';
+
+// test for web worker but not in IE10
+var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
+
+// node
+function useNextTick() {
+  // node version 0.10.x displays a deprecation warning when nextTick is used recursively
+  // see https://github.com/cujojs/when/issues/410 for details
+  return function () {
+    return process.nextTick(flush);
+  };
+}
+
+// vertx
+function useVertxTimer() {
+  return function () {
+    vertxNext(flush);
+  };
+}
+
+function useMutationObserver() {
+  var iterations = 0;
+  var observer = new BrowserMutationObserver(flush);
+  var node = document.createTextNode('');
+  observer.observe(node, { characterData: true });
+
+  return function () {
+    node.data = iterations = ++iterations % 2;
+  };
+}
+
+// web worker
+function useMessageChannel() {
+  var channel = new MessageChannel();
+  channel.port1.onmessage = flush;
+  return function () {
+    return channel.port2.postMessage(0);
+  };
+}
+
+function useSetTimeout() {
+  // Store setTimeout reference so es6-promise will be unaffected by
+  // other code modifying setTimeout (like sinon.useFakeTimers())
+  var globalSetTimeout = setTimeout;
+  return function () {
+    return globalSetTimeout(flush, 1);
+  };
+}
+
+var queue = new Array(1000);
+function flush() {
+  for (var i = 0; i < len; i += 2) {
+    var callback = queue[i];
+    var arg = queue[i + 1];
+
+    callback(arg);
+
+    queue[i] = undefined;
+    queue[i + 1] = undefined;
+  }
+
+  len = 0;
+}
+
+function attemptVertx() {
+  try {
+    var r = _dereq_;
+    var vertx = r('vertx');
+    vertxNext = vertx.runOnLoop || vertx.runOnContext;
+    return useVertxTimer();
+  } catch (e) {
+    return useSetTimeout();
+  }
+}
+
+var scheduleFlush = undefined;
+// Decide what async method to use to triggering processing of queued callbacks:
+if (isNode) {
+  scheduleFlush = useNextTick();
+} else if (BrowserMutationObserver) {
+  scheduleFlush = useMutationObserver();
+} else if (isWorker) {
+  scheduleFlush = useMessageChannel();
+} else if (browserWindow === undefined && typeof _dereq_ === 'function') {
+  scheduleFlush = attemptVertx();
+} else {
+  scheduleFlush = useSetTimeout();
+}
 
-    var lib$es6$promise$utils$$isArray = lib$es6$promise$utils$$_isArray;
-    var lib$es6$promise$asap$$len = 0;
-    var lib$es6$promise$asap$$vertxNext;
-    var lib$es6$promise$asap$$customSchedulerFn;
-
-    var lib$es6$promise$asap$$asap = function asap(callback, arg) {
-      lib$es6$promise$asap$$queue[lib$es6$promise$asap$$len] = callback;
-      lib$es6$promise$asap$$queue[lib$es6$promise$asap$$len + 1] = arg;
-      lib$es6$promise$asap$$len += 2;
-      if (lib$es6$promise$asap$$len === 2) {
-        // If len is 2, that means that we need to schedule an async flush.
-        // If additional callbacks are queued before the queue is flushed, they
-        // will be processed by this flush that we are scheduling.
-        if (lib$es6$promise$asap$$customSchedulerFn) {
-          lib$es6$promise$asap$$customSchedulerFn(lib$es6$promise$asap$$flush);
-        } else {
-          lib$es6$promise$asap$$scheduleFlush();
-        }
-      }
-    }
-
-    function lib$es6$promise$asap$$setScheduler(scheduleFn) {
-      lib$es6$promise$asap$$customSchedulerFn = scheduleFn;
-    }
-
-    function lib$es6$promise$asap$$setAsap(asapFn) {
-      lib$es6$promise$asap$$asap = asapFn;
-    }
-
-    var lib$es6$promise$asap$$browserWindow = (typeof window !== 'undefined') ? window : undefined;
-    var lib$es6$promise$asap$$browserGlobal = lib$es6$promise$asap$$browserWindow || {};
-    var lib$es6$promise$asap$$BrowserMutationObserver = lib$es6$promise$asap$$browserGlobal.MutationObserver || lib$es6$promise$asap$$browserGlobal.WebKitMutationObserver;
-    var lib$es6$promise$asap$$isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
-
-    // test for web worker but not in IE10
-    var lib$es6$promise$asap$$isWorker = typeof Uint8ClampedArray !== 'undefined' &&
-      typeof importScripts !== 'undefined' &&
-      typeof MessageChannel !== 'undefined';
-
-    // node
-    function lib$es6$promise$asap$$useNextTick() {
-      // node version 0.10.x displays a deprecation warning when nextTick is used recursively
-      // see https://github.com/cujojs/when/issues/410 for details
-      return function() {
-        process.nextTick(lib$es6$promise$asap$$flush);
-      };
-    }
-
-    // vertx
-    function lib$es6$promise$asap$$useVertxTimer() {
-      return function() {
-        lib$es6$promise$asap$$vertxNext(lib$es6$promise$asap$$flush);
-      };
-    }
-
-    function lib$es6$promise$asap$$useMutationObserver() {
-      var iterations = 0;
-      var observer = new lib$es6$promise$asap$$BrowserMutationObserver(lib$es6$promise$asap$$flush);
-      var node = document.createTextNode('');
-      observer.observe(node, { characterData: true });
-
-      return function() {
-        node.data = (iterations = ++iterations % 2);
-      };
-    }
-
-    // web worker
-    function lib$es6$promise$asap$$useMessageChannel() {
-      var channel = new MessageChannel();
-      channel.port1.onmessage = lib$es6$promise$asap$$flush;
-      return function () {
-        channel.port2.postMessage(0);
-      };
-    }
-
-    function lib$es6$promise$asap$$useSetTimeout() {
-      return function() {
-        setTimeout(lib$es6$promise$asap$$flush, 1);
-      };
-    }
-
-    var lib$es6$promise$asap$$queue = new Array(1000);
-    function lib$es6$promise$asap$$flush() {
-      for (var i = 0; i < lib$es6$promise$asap$$len; i+=2) {
-        var callback = lib$es6$promise$asap$$queue[i];
-        var arg = lib$es6$promise$asap$$queue[i+1];
-
-        callback(arg);
-
-        lib$es6$promise$asap$$queue[i] = undefined;
-        lib$es6$promise$asap$$queue[i+1] = undefined;
-      }
-
-      lib$es6$promise$asap$$len = 0;
-    }
-
-    function lib$es6$promise$asap$$attemptVertx() {
-      try {
-        var r = _dereq_;
-        var vertx = r('vertx');
-        lib$es6$promise$asap$$vertxNext = vertx.runOnLoop || vertx.runOnContext;
-        return lib$es6$promise$asap$$useVertxTimer();
-      } catch(e) {
-        return lib$es6$promise$asap$$useSetTimeout();
-      }
-    }
-
-    var lib$es6$promise$asap$$scheduleFlush;
-    // Decide what async method to use to triggering processing of queued callbacks:
-    if (lib$es6$promise$asap$$isNode) {
-      lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useNextTick();
-    } else if (lib$es6$promise$asap$$BrowserMutationObserver) {
-      lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useMutationObserver();
-    } else if (lib$es6$promise$asap$$isWorker) {
-      lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useMessageChannel();
-    } else if (lib$es6$promise$asap$$browserWindow === undefined && typeof _dereq_ === 'function') {
-      lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$attemptVertx();
-    } else {
-      lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useSetTimeout();
-    }
-    function lib$es6$promise$then$$then(onFulfillment, onRejection) {
-      var parent = this;
-
-      var child = new this.constructor(lib$es6$promise$$internal$$noop);
-
-      if (child[lib$es6$promise$$internal$$PROMISE_ID] === undefined) {
-        lib$es6$promise$$internal$$makePromise(child);
-      }
-
-      var state = parent._state;
-
-      if (state) {
-        var callback = arguments[state - 1];
-        lib$es6$promise$asap$$asap(function(){
-          lib$es6$promise$$internal$$invokeCallback(state, child, callback, parent._result);
-        });
-      } else {
-        lib$es6$promise$$internal$$subscribe(parent, child, onFulfillment, onRejection);
-      }
-
-      return child;
-    }
-    var lib$es6$promise$then$$default = lib$es6$promise$then$$then;
-    function lib$es6$promise$promise$resolve$$resolve(object) {
-      /*jshint validthis:true */
-      var Constructor = this;
-
-      if (object && typeof object === 'object' && object.constructor === Constructor) {
-        return object;
-      }
-
-      var promise = new Constructor(lib$es6$promise$$internal$$noop);
-      lib$es6$promise$$internal$$resolve(promise, object);
-      return promise;
-    }
-    var lib$es6$promise$promise$resolve$$default = lib$es6$promise$promise$resolve$$resolve;
-    var lib$es6$promise$$internal$$PROMISE_ID = Math.random().toString(36).substring(16);
-
-    function lib$es6$promise$$internal$$noop() {}
-
-    var lib$es6$promise$$internal$$PENDING   = void 0;
-    var lib$es6$promise$$internal$$FULFILLED = 1;
-    var lib$es6$promise$$internal$$REJECTED  = 2;
-
-    var lib$es6$promise$$internal$$GET_THEN_ERROR = new lib$es6$promise$$internal$$ErrorObject();
-
-    function lib$es6$promise$$internal$$selfFulfillment() {
-      return new TypeError("You cannot resolve a promise with itself");
-    }
-
-    function lib$es6$promise$$internal$$cannotReturnOwn() {
-      return new TypeError('A promises callback cannot return that same promise.');
-    }
-
-    function lib$es6$promise$$internal$$getThen(promise) {
-      try {
-        return promise.then;
-      } catch(error) {
-        lib$es6$promise$$internal$$GET_THEN_ERROR.error = error;
-        return lib$es6$promise$$internal$$GET_THEN_ERROR;
-      }
-    }
-
-    function lib$es6$promise$$internal$$tryThen(then, value, fulfillmentHandler, rejectionHandler) {
-      try {
-        then.call(value, fulfillmentHandler, rejectionHandler);
-      } catch(e) {
-        return e;
-      }
-    }
-
-    function lib$es6$promise$$internal$$handleForeignThenable(promise, thenable, then) {
-       lib$es6$promise$asap$$asap(function(promise) {
-        var sealed = false;
-        var error = lib$es6$promise$$internal$$tryThen(then, thenable, function(value) {
-          if (sealed) { return; }
-          sealed = true;
-          if (thenable !== value) {
-            lib$es6$promise$$internal$$resolve(promise, value);
-          } else {
-            lib$es6$promise$$internal$$fulfill(promise, value);
-          }
-        }, function(reason) {
-          if (sealed) { return; }
-          sealed = true;
-
-          lib$es6$promise$$internal$$reject(promise, reason);
-        }, 'Settle: ' + (promise._label || ' unknown promise'));
-
-        if (!sealed && error) {
-          sealed = true;
-          lib$es6$promise$$internal$$reject(promise, error);
-        }
-      }, promise);
-    }
-
-    function lib$es6$promise$$internal$$handleOwnThenable(promise, thenable) {
-      if (thenable._state === lib$es6$promise$$internal$$FULFILLED) {
-        lib$es6$promise$$internal$$fulfill(promise, thenable._result);
-      } else if (thenable._state === lib$es6$promise$$internal$$REJECTED) {
-        lib$es6$promise$$internal$$reject(promise, thenable._result);
-      } else {
-        lib$es6$promise$$internal$$subscribe(thenable, undefined, function(value) {
-          lib$es6$promise$$internal$$resolve(promise, value);
-        }, function(reason) {
-          lib$es6$promise$$internal$$reject(promise, reason);
-        });
-      }
-    }
-
-    function lib$es6$promise$$internal$$handleMaybeThenable(promise, maybeThenable, then) {
-      if (maybeThenable.constructor === promise.constructor &&
-          then === lib$es6$promise$then$$default &&
-          constructor.resolve === lib$es6$promise$promise$resolve$$default) {
-        lib$es6$promise$$internal$$handleOwnThenable(promise, maybeThenable);
-      } else {
-        if (then === lib$es6$promise$$internal$$GET_THEN_ERROR) {
-          lib$es6$promise$$internal$$reject(promise, lib$es6$promise$$internal$$GET_THEN_ERROR.error);
-        } else if (then === undefined) {
-          lib$es6$promise$$internal$$fulfill(promise, maybeThenable);
-        } else if (lib$es6$promise$utils$$isFunction(then)) {
-          lib$es6$promise$$internal$$handleForeignThenable(promise, maybeThenable, then);
-        } else {
-          lib$es6$promise$$internal$$fulfill(promise, maybeThenable);
-        }
-      }
-    }
-
-    function lib$es6$promise$$internal$$resolve(promise, value) {
-      if (promise === value) {
-        lib$es6$promise$$internal$$reject(promise, lib$es6$promise$$internal$$selfFulfillment());
-      } else if (lib$es6$promise$utils$$objectOrFunction(value)) {
-        lib$es6$promise$$internal$$handleMaybeThenable(promise, value, lib$es6$promise$$internal$$getThen(value));
-      } else {
-        lib$es6$promise$$internal$$fulfill(promise, value);
-      }
-    }
-
-    function lib$es6$promise$$internal$$publishRejection(promise) {
-      if (promise._onerror) {
-        promise._onerror(promise._result);
-      }
-
-      lib$es6$promise$$internal$$publish(promise);
-    }
-
-    function lib$es6$promise$$internal$$fulfill(promise, value) {
-      if (promise._state !== lib$es6$promise$$internal$$PENDING) { return; }
-
-      promise._result = value;
-      promise._state = lib$es6$promise$$internal$$FULFILLED;
-
-      if (promise._subscribers.length !== 0) {
-        lib$es6$promise$asap$$asap(lib$es6$promise$$internal$$publish, promise);
-      }
-    }
-
-    function lib$es6$promise$$internal$$reject(promise, reason) {
-      if (promise._state !== lib$es6$promise$$internal$$PENDING) { return; }
-      promise._state = lib$es6$promise$$internal$$REJECTED;
-      promise._result = reason;
-
-      lib$es6$promise$asap$$asap(lib$es6$promise$$internal$$publishRejection, promise);
-    }
-
-    function lib$es6$promise$$internal$$subscribe(parent, child, onFulfillment, onRejection) {
-      var subscribers = parent._subscribers;
-      var length = subscribers.length;
-
-      parent._onerror = null;
-
-      subscribers[length] = child;
-      subscribers[length + lib$es6$promise$$internal$$FULFILLED] = onFulfillment;
-      subscribers[length + lib$es6$promise$$internal$$REJECTED]  = onRejection;
-
-      if (length === 0 && parent._state) {
-        lib$es6$promise$asap$$asap(lib$es6$promise$$internal$$publish, parent);
-      }
-    }
-
-    function lib$es6$promise$$internal$$publish(promise) {
-      var subscribers = promise._subscribers;
-      var settled = promise._state;
-
-      if (subscribers.length === 0) { return; }
-
-      var child, callback, detail = promise._result;
-
-      for (var i = 0; i < subscribers.length; i += 3) {
-        child = subscribers[i];
-        callback = subscribers[i + settled];
-
-        if (child) {
-          lib$es6$promise$$internal$$invokeCallback(settled, child, callback, detail);
-        } else {
-          callback(detail);
-        }
-      }
-
-      promise._subscribers.length = 0;
-    }
-
-    function lib$es6$promise$$internal$$ErrorObject() {
-      this.error = null;
-    }
-
-    var lib$es6$promise$$internal$$TRY_CATCH_ERROR = new lib$es6$promise$$internal$$ErrorObject();
-
-    function lib$es6$promise$$internal$$tryCatch(callback, detail) {
-      try {
-        return callback(detail);
-      } catch(e) {
-        lib$es6$promise$$internal$$TRY_CATCH_ERROR.error = e;
-        return lib$es6$promise$$internal$$TRY_CATCH_ERROR;
-      }
-    }
-
-    function lib$es6$promise$$internal$$invokeCallback(settled, promise, callback, detail) {
-      var hasCallback = lib$es6$promise$utils$$isFunction(callback),
-          value, error, succeeded, failed;
-
-      if (hasCallback) {
-        value = lib$es6$promise$$internal$$tryCatch(callback, detail);
-
-        if (value === lib$es6$promise$$internal$$TRY_CATCH_ERROR) {
-          failed = true;
-          error = value.error;
-          value = null;
-        } else {
-          succeeded = true;
-        }
-
-        if (promise === value) {
-          lib$es6$promise$$internal$$reject(promise, lib$es6$promise$$internal$$cannotReturnOwn());
-          return;
-        }
-
-      } else {
-        value = detail;
-        succeeded = true;
-      }
-
-      if (promise._state !== lib$es6$promise$$internal$$PENDING) {
-        // noop
-      } else if (hasCallback && succeeded) {
-        lib$es6$promise$$internal$$resolve(promise, value);
-      } else if (failed) {
-        lib$es6$promise$$internal$$reject(promise, error);
-      } else if (settled === lib$es6$promise$$internal$$FULFILLED) {
-        lib$es6$promise$$internal$$fulfill(promise, value);
-      } else if (settled === lib$es6$promise$$internal$$REJECTED) {
-        lib$es6$promise$$internal$$reject(promise, value);
-      }
-    }
-
-    function lib$es6$promise$$internal$$initializePromise(promise, resolver) {
-      try {
-        resolver(function resolvePromise(value){
-          lib$es6$promise$$internal$$resolve(promise, value);
-        }, function rejectPromise(reason) {
-          lib$es6$promise$$internal$$reject(promise, reason);
-        });
-      } catch(e) {
-        lib$es6$promise$$internal$$reject(promise, e);
-      }
-    }
-
-    var lib$es6$promise$$internal$$id = 0;
-    function lib$es6$promise$$internal$$nextId() {
-      return lib$es6$promise$$internal$$id++;
-    }
-
-    function lib$es6$promise$$internal$$makePromise(promise) {
-      promise[lib$es6$promise$$internal$$PROMISE_ID] = lib$es6$promise$$internal$$id++;
-      promise._state = undefined;
-      promise._result = undefined;
-      promise._subscribers = [];
-    }
-
-    function lib$es6$promise$promise$all$$all(entries) {
-      return new lib$es6$promise$enumerator$$default(this, entries).promise;
-    }
-    var lib$es6$promise$promise$all$$default = lib$es6$promise$promise$all$$all;
-    function lib$es6$promise$promise$race$$race(entries) {
-      /*jshint validthis:true */
-      var Constructor = this;
-
-      if (!lib$es6$promise$utils$$isArray(entries)) {
-        return new Constructor(function(resolve, reject) {
-          reject(new TypeError('You must pass an array to race.'));
-        });
-      } else {
-        return new Constructor(function(resolve, reject) {
-          var length = entries.length;
-          for (var i = 0; i < length; i++) {
-            Constructor.resolve(entries[i]).then(resolve, reject);
-          }
-        });
-      }
-    }
-    var lib$es6$promise$promise$race$$default = lib$es6$promise$promise$race$$race;
-    function lib$es6$promise$promise$reject$$reject(reason) {
-      /*jshint validthis:true */
-      var Constructor = this;
-      var promise = new Constructor(lib$es6$promise$$internal$$noop);
-      lib$es6$promise$$internal$$reject(promise, reason);
-      return promise;
-    }
-    var lib$es6$promise$promise$reject$$default = lib$es6$promise$promise$reject$$reject;
-
-
-    function lib$es6$promise$promise$$needsResolver() {
-      throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-    }
-
-    function lib$es6$promise$promise$$needsNew() {
-      throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
-    }
-
-    var lib$es6$promise$promise$$default = lib$es6$promise$promise$$Promise;
-    /**
-      Promise objects represent the eventual result of an asynchronous operation. The
-      primary way of interacting with a promise is through its `then` method, which
-      registers callbacks to receive either a promise's eventual value or the reason
-      why the promise cannot be fulfilled.
-
-      Terminology
-      -----------
-
-      - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
-      - `thenable` is an object or function that defines a `then` method.
-      - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
-      - `exception` is a value that is thrown using the throw statement.
-      - `reason` is a value that indicates why a promise was rejected.
-      - `settled` the final resting state of a promise, fulfilled or rejected.
-
-      A promise can be in one of three states: pending, fulfilled, or rejected.
-
-      Promises that are fulfilled have a fulfillment value and are in the fulfilled
-      state.  Promises that are rejected have a rejection reason and are in the
-      rejected state.  A fulfillment value is never a thenable.
-
-      Promises can also be said to *resolve* a value.  If this value is also a
-      promise, then the original promise's settled state will match the value's
-      settled state.  So a promise that *resolves* a promise that rejects will
-      itself reject, and a promise that *resolves* a promise that fulfills will
-      itself fulfill.
-
-
-      Basic Usage:
-      ------------
-
-      ```js
-      var promise = new Promise(function(resolve, reject) {
-        // on success
-        resolve(value);
-
-        // on failure
-        reject(reason);
+function then(onFulfillment, onRejection) {
+  var _arguments = arguments;
+
+  var parent = this;
+
+  var child = new this.constructor(noop);
+
+  if (child[PROMISE_ID] === undefined) {
+    makePromise(child);
+  }
+
+  var _state = parent._state;
+
+  if (_state) {
+    (function () {
+      var callback = _arguments[_state - 1];
+      asap(function () {
+        return invokeCallback(_state, child, callback, parent._result);
       });
-
-      promise.then(function(value) {
-        // on fulfillment
-      }, function(reason) {
-        // on rejection
-      });
-      ```
-
-      Advanced Usage:
-      ---------------
-
-      Promises shine when abstracting away asynchronous interactions such as
-      `XMLHttpRequest`s.
-
-      ```js
-      function getJSON(url) {
-        return new Promise(function(resolve, reject){
-          var xhr = new XMLHttpRequest();
-
-          xhr.open('GET', url);
-          xhr.onreadystatechange = handler;
-          xhr.responseType = 'json';
-          xhr.setRequestHeader('Accept', 'application/json');
-          xhr.send();
-
-          function handler() {
-            if (this.readyState === this.DONE) {
-              if (this.status === 200) {
-                resolve(this.response);
-              } else {
-                reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
-              }
-            }
-          };
-        });
-      }
-
-      getJSON('/posts.json').then(function(json) {
-        // on fulfillment
-      }, function(reason) {
-        // on rejection
-      });
-      ```
-
-      Unlike callbacks, promises are great composable primitives.
-
-      ```js
-      Promise.all([
-        getJSON('/posts'),
-        getJSON('/comments')
-      ]).then(function(values){
-        values[0] // => postsJSON
-        values[1] // => commentsJSON
-
-        return values;
-      });
-      ```
-
-      @class Promise
-      @param {function} resolver
-      Useful for tooling.
-      @constructor
-    */
-    function lib$es6$promise$promise$$Promise(resolver) {
-      this[lib$es6$promise$$internal$$PROMISE_ID] = lib$es6$promise$$internal$$nextId();
-      this._result = this._state = undefined;
-      this._subscribers = [];
-
-      if (lib$es6$promise$$internal$$noop !== resolver) {
-        typeof resolver !== 'function' && lib$es6$promise$promise$$needsResolver();
-        this instanceof lib$es6$promise$promise$$Promise ? lib$es6$promise$$internal$$initializePromise(this, resolver) : lib$es6$promise$promise$$needsNew();
-      }
-    }
-
-    lib$es6$promise$promise$$Promise.all = lib$es6$promise$promise$all$$default;
-    lib$es6$promise$promise$$Promise.race = lib$es6$promise$promise$race$$default;
-    lib$es6$promise$promise$$Promise.resolve = lib$es6$promise$promise$resolve$$default;
-    lib$es6$promise$promise$$Promise.reject = lib$es6$promise$promise$reject$$default;
-    lib$es6$promise$promise$$Promise._setScheduler = lib$es6$promise$asap$$setScheduler;
-    lib$es6$promise$promise$$Promise._setAsap = lib$es6$promise$asap$$setAsap;
-    lib$es6$promise$promise$$Promise._asap = lib$es6$promise$asap$$asap;
-
-    lib$es6$promise$promise$$Promise.prototype = {
-      constructor: lib$es6$promise$promise$$Promise,
-
-    /**
-      The primary way of interacting with a promise is through its `then` method,
-      which registers callbacks to receive either a promise's eventual value or the
-      reason why the promise cannot be fulfilled.
-
-      ```js
-      findUser().then(function(user){
-        // user is available
-      }, function(reason){
-        // user is unavailable, and you are given the reason why
-      });
-      ```
-
-      Chaining
-      --------
-
-      The return value of `then` is itself a promise.  This second, 'downstream'
-      promise is resolved with the return value of the first promise's fulfillment
-      or rejection handler, or rejected if the handler throws an exception.
-
-      ```js
-      findUser().then(function (user) {
-        return user.name;
-      }, function (reason) {
-        return 'default name';
-      }).then(function (userName) {
-        // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
-        // will be `'default name'`
-      });
-
-      findUser().then(function (user) {
-        throw new Error('Found user, but still unhappy');
-      }, function (reason) {
-        throw new Error('`findUser` rejected and we're unhappy');
-      }).then(function (value) {
-        // never reached
-      }, function (reason) {
-        // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
-        // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
-      });
-      ```
-      If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
-
-      ```js
-      findUser().then(function (user) {
-        throw new PedagogicalException('Upstream error');
-      }).then(function (value) {
-        // never reached
-      }).then(function (value) {
-        // never reached
-      }, function (reason) {
-        // The `PedgagocialException` is propagated all the way down to here
-      });
-      ```
-
-      Assimilation
-      ------------
-
-      Sometimes the value you want to propagate to a downstream promise can only be
-      retrieved asynchronously. This can be achieved by returning a promise in the
-      fulfillment or rejection handler. The downstream promise will then be pending
-      until the returned promise is settled. This is called *assimilation*.
-
-      ```js
-      findUser().then(function (user) {
-        return findCommentsByAuthor(user);
-      }).then(function (comments) {
-        // The user's comments are now available
-      });
-      ```
-
-      If the assimliated promise rejects, then the downstream promise will also reject.
-
-      ```js
-      findUser().then(function (user) {
-        return findCommentsByAuthor(user);
-      }).then(function (comments) {
-        // If `findCommentsByAuthor` fulfills, we'll have the value here
-      }, function (reason) {
-        // If `findCommentsByAuthor` rejects, we'll have the reason here
-      });
-      ```
-
-      Simple Example
-      --------------
-
-      Synchronous Example
-
-      ```javascript
-      var result;
-
-      try {
-        result = findResult();
-        // success
-      } catch(reason) {
-        // failure
-      }
-      ```
-
-      Errback Example
-
-      ```js
-      findResult(function(result, err){
-        if (err) {
-          // failure
-        } else {
-          // success
-        }
-      });
-      ```
-
-      Promise Example;
-
-      ```javascript
-      findResult().then(function(result){
-        // success
-      }, function(reason){
-        // failure
-      });
-      ```
-
-      Advanced Example
-      --------------
-
-      Synchronous Example
-
-      ```javascript
-      var author, books;
-
-      try {
-        author = findAuthor();
-        books  = findBooksByAuthor(author);
-        // success
-      } catch(reason) {
-        // failure
-      }
-      ```
-
-      Errback Example
-
-      ```js
-
-      function foundBooks(books) {
-
-      }
-
-      function failure(reason) {
-
-      }
-
-      findAuthor(function(author, err){
-        if (err) {
-          failure(err);
-          // failure
-        } else {
-          try {
-            findBoooksByAuthor(author, function(books, err) {
-              if (err) {
-                failure(err);
-              } else {
-                try {
-                  foundBooks(books);
-                } catch(reason) {
-                  failure(reason);
-                }
-              }
-            });
-          } catch(error) {
-            failure(err);
-          }
-          // success
-        }
-      });
-      ```
-
-      Promise Example;
-
-      ```javascript
-      findAuthor().
-        then(findBooksByAuthor).
-        then(function(books){
-          // found books
-      }).catch(function(reason){
-        // something went wrong
-      });
-      ```
-
-      @method then
-      @param {Function} onFulfilled
-      @param {Function} onRejected
-      Useful for tooling.
-      @return {Promise}
-    */
-      then: lib$es6$promise$then$$default,
-
-    /**
-      `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
-      as the catch block of a try/catch statement.
-
-      ```js
-      function findAuthor(){
-        throw new Error('couldn't find that author');
-      }
-
-      // synchronous
-      try {
-        findAuthor();
-      } catch(reason) {
-        // something went wrong
-      }
-
-      // async with promises
-      findAuthor().catch(function(reason){
-        // something went wrong
-      });
-      ```
-
-      @method catch
-      @param {Function} onRejection
-      Useful for tooling.
-      @return {Promise}
-    */
-      'catch': function(onRejection) {
-        return this.then(null, onRejection);
-      }
-    };
-    var lib$es6$promise$enumerator$$default = lib$es6$promise$enumerator$$Enumerator;
-    function lib$es6$promise$enumerator$$Enumerator(Constructor, input) {
-      this._instanceConstructor = Constructor;
-      this.promise = new Constructor(lib$es6$promise$$internal$$noop);
-
-      if (!this.promise[lib$es6$promise$$internal$$PROMISE_ID]) {
-        lib$es6$promise$$internal$$makePromise(this.promise);
-      }
-
-      if (lib$es6$promise$utils$$isArray(input)) {
-        this._input     = input;
-        this.length     = input.length;
-        this._remaining = input.length;
-
-        this._result = new Array(this.length);
-
-        if (this.length === 0) {
-          lib$es6$promise$$internal$$fulfill(this.promise, this._result);
-        } else {
-          this.length = this.length || 0;
-          this._enumerate();
-          if (this._remaining === 0) {
-            lib$es6$promise$$internal$$fulfill(this.promise, this._result);
-          }
-        }
-      } else {
-        lib$es6$promise$$internal$$reject(this.promise, lib$es6$promise$enumerator$$validationError());
-      }
-    }
-
-    function lib$es6$promise$enumerator$$validationError() {
-      return new Error('Array Methods must be provided an Array');
-    }
-
-    lib$es6$promise$enumerator$$Enumerator.prototype._enumerate = function() {
-      var length  = this.length;
-      var input   = this._input;
-
-      for (var i = 0; this._state === lib$es6$promise$$internal$$PENDING && i < length; i++) {
-        this._eachEntry(input[i], i);
-      }
-    };
-
-    lib$es6$promise$enumerator$$Enumerator.prototype._eachEntry = function(entry, i) {
-      var c = this._instanceConstructor;
-      var resolve = c.resolve;
-
-      if (resolve === lib$es6$promise$promise$resolve$$default) {
-        var then = lib$es6$promise$$internal$$getThen(entry);
-
-        if (then === lib$es6$promise$then$$default &&
-            entry._state !== lib$es6$promise$$internal$$PENDING) {
-          this._settledAt(entry._state, i, entry._result);
-        } else if (typeof then !== 'function') {
-          this._remaining--;
-          this._result[i] = entry;
-        } else if (c === lib$es6$promise$promise$$default) {
-          var promise = new c(lib$es6$promise$$internal$$noop);
-          lib$es6$promise$$internal$$handleMaybeThenable(promise, entry, then);
-          this._willSettleAt(promise, i);
-        } else {
-          this._willSettleAt(new c(function(resolve) { resolve(entry); }), i);
-        }
-      } else {
-        this._willSettleAt(resolve(entry), i);
-      }
-    };
-
-    lib$es6$promise$enumerator$$Enumerator.prototype._settledAt = function(state, i, value) {
-      var promise = this.promise;
-
-      if (promise._state === lib$es6$promise$$internal$$PENDING) {
-        this._remaining--;
-
-        if (state === lib$es6$promise$$internal$$REJECTED) {
-          lib$es6$promise$$internal$$reject(promise, value);
-        } else {
-          this._result[i] = value;
-        }
-      }
-
-      if (this._remaining === 0) {
-        lib$es6$promise$$internal$$fulfill(promise, this._result);
-      }
-    };
-
-    lib$es6$promise$enumerator$$Enumerator.prototype._willSettleAt = function(promise, i) {
-      var enumerator = this;
-
-      lib$es6$promise$$internal$$subscribe(promise, undefined, function(value) {
-        enumerator._settledAt(lib$es6$promise$$internal$$FULFILLED, i, value);
-      }, function(reason) {
-        enumerator._settledAt(lib$es6$promise$$internal$$REJECTED, i, reason);
-      });
-    };
-    function lib$es6$promise$polyfill$$polyfill() {
-      var local;
-
-      if (typeof global !== 'undefined') {
-          local = global;
-      } else if (typeof self !== 'undefined') {
-          local = self;
-      } else {
-          try {
-              local = Function('return this')();
-          } catch (e) {
-              throw new Error('polyfill failed because global object is unavailable in this environment');
-          }
-      }
-
-      var P = local.Promise;
-
-      if (P && Object.prototype.toString.call(P.resolve()) === '[object Promise]' && !P.cast) {
+    })();
+  } else {
+    subscribe(parent, child, onFulfillment, onRejection);
+  }
+
+  return child;
+}
+
+/**
+  `Promise.resolve` returns a promise that will become resolved with the
+  passed `value`. It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    resolve(1);
+  });
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.resolve(1);
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  @method resolve
+  @static
+  @param {Any} value value that the returned promise will be resolved with
+  Useful for tooling.
+  @return {Promise} a promise that will become fulfilled with the given
+  `value`
+*/
+function resolve(object) {
+  /*jshint validthis:true */
+  var Constructor = this;
+
+  if (object && typeof object === 'object' && object.constructor === Constructor) {
+    return object;
+  }
+
+  var promise = new Constructor(noop);
+  _resolve(promise, object);
+  return promise;
+}
+
+var PROMISE_ID = Math.random().toString(36).substring(16);
+
+function noop() {}
+
+var PENDING = void 0;
+var FULFILLED = 1;
+var REJECTED = 2;
+
+var GET_THEN_ERROR = new ErrorObject();
+
+function selfFulfillment() {
+  return new TypeError("You cannot resolve a promise with itself");
+}
+
+function cannotReturnOwn() {
+  return new TypeError('A promises callback cannot return that same promise.');
+}
+
+function getThen(promise) {
+  try {
+    return promise.then;
+  } catch (error) {
+    GET_THEN_ERROR.error = error;
+    return GET_THEN_ERROR;
+  }
+}
+
+function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
+  try {
+    then.call(value, fulfillmentHandler, rejectionHandler);
+  } catch (e) {
+    return e;
+  }
+}
+
+function handleForeignThenable(promise, thenable, then) {
+  asap(function (promise) {
+    var sealed = false;
+    var error = tryThen(then, thenable, function (value) {
+      if (sealed) {
         return;
       }
+      sealed = true;
+      if (thenable !== value) {
+        _resolve(promise, value);
+      } else {
+        fulfill(promise, value);
+      }
+    }, function (reason) {
+      if (sealed) {
+        return;
+      }
+      sealed = true;
 
-      local.Promise = lib$es6$promise$promise$$default;
+      _reject(promise, reason);
+    }, 'Settle: ' + (promise._label || ' unknown promise'));
+
+    if (!sealed && error) {
+      sealed = true;
+      _reject(promise, error);
     }
-    var lib$es6$promise$polyfill$$default = lib$es6$promise$polyfill$$polyfill;
+  }, promise);
+}
 
-    var lib$es6$promise$umd$$ES6Promise = {
-      'Promise': lib$es6$promise$promise$$default,
-      'polyfill': lib$es6$promise$polyfill$$default
-    };
+function handleOwnThenable(promise, thenable) {
+  if (thenable._state === FULFILLED) {
+    fulfill(promise, thenable._result);
+  } else if (thenable._state === REJECTED) {
+    _reject(promise, thenable._result);
+  } else {
+    subscribe(thenable, undefined, function (value) {
+      return _resolve(promise, value);
+    }, function (reason) {
+      return _reject(promise, reason);
+    });
+  }
+}
 
-    /* global define:true module:true window: true */
-    if (typeof define === 'function' && define['amd']) {
-      define(function() { return lib$es6$promise$umd$$ES6Promise; });
-    } else if (typeof module !== 'undefined' && module['exports']) {
-      module['exports'] = lib$es6$promise$umd$$ES6Promise;
-    } else if (typeof this !== 'undefined') {
-      this['ES6Promise'] = lib$es6$promise$umd$$ES6Promise;
+function handleMaybeThenable(promise, maybeThenable, then$$) {
+  if (maybeThenable.constructor === promise.constructor && then$$ === then && maybeThenable.constructor.resolve === resolve) {
+    handleOwnThenable(promise, maybeThenable);
+  } else {
+    if (then$$ === GET_THEN_ERROR) {
+      _reject(promise, GET_THEN_ERROR.error);
+    } else if (then$$ === undefined) {
+      fulfill(promise, maybeThenable);
+    } else if (isFunction(then$$)) {
+      handleForeignThenable(promise, maybeThenable, then$$);
+    } else {
+      fulfill(promise, maybeThenable);
+    }
+  }
+}
+
+function _resolve(promise, value) {
+  if (promise === value) {
+    _reject(promise, selfFulfillment());
+  } else if (objectOrFunction(value)) {
+    handleMaybeThenable(promise, value, getThen(value));
+  } else {
+    fulfill(promise, value);
+  }
+}
+
+function publishRejection(promise) {
+  if (promise._onerror) {
+    promise._onerror(promise._result);
+  }
+
+  publish(promise);
+}
+
+function fulfill(promise, value) {
+  if (promise._state !== PENDING) {
+    return;
+  }
+
+  promise._result = value;
+  promise._state = FULFILLED;
+
+  if (promise._subscribers.length !== 0) {
+    asap(publish, promise);
+  }
+}
+
+function _reject(promise, reason) {
+  if (promise._state !== PENDING) {
+    return;
+  }
+  promise._state = REJECTED;
+  promise._result = reason;
+
+  asap(publishRejection, promise);
+}
+
+function subscribe(parent, child, onFulfillment, onRejection) {
+  var _subscribers = parent._subscribers;
+  var length = _subscribers.length;
+
+  parent._onerror = null;
+
+  _subscribers[length] = child;
+  _subscribers[length + FULFILLED] = onFulfillment;
+  _subscribers[length + REJECTED] = onRejection;
+
+  if (length === 0 && parent._state) {
+    asap(publish, parent);
+  }
+}
+
+function publish(promise) {
+  var subscribers = promise._subscribers;
+  var settled = promise._state;
+
+  if (subscribers.length === 0) {
+    return;
+  }
+
+  var child = undefined,
+      callback = undefined,
+      detail = promise._result;
+
+  for (var i = 0; i < subscribers.length; i += 3) {
+    child = subscribers[i];
+    callback = subscribers[i + settled];
+
+    if (child) {
+      invokeCallback(settled, child, callback, detail);
+    } else {
+      callback(detail);
+    }
+  }
+
+  promise._subscribers.length = 0;
+}
+
+function ErrorObject() {
+  this.error = null;
+}
+
+var TRY_CATCH_ERROR = new ErrorObject();
+
+function tryCatch(callback, detail) {
+  try {
+    return callback(detail);
+  } catch (e) {
+    TRY_CATCH_ERROR.error = e;
+    return TRY_CATCH_ERROR;
+  }
+}
+
+function invokeCallback(settled, promise, callback, detail) {
+  var hasCallback = isFunction(callback),
+      value = undefined,
+      error = undefined,
+      succeeded = undefined,
+      failed = undefined;
+
+  if (hasCallback) {
+    value = tryCatch(callback, detail);
+
+    if (value === TRY_CATCH_ERROR) {
+      failed = true;
+      error = value.error;
+      value = null;
+    } else {
+      succeeded = true;
     }
 
-    lib$es6$promise$polyfill$$default();
-}).call(this);
+    if (promise === value) {
+      _reject(promise, cannotReturnOwn());
+      return;
+    }
+  } else {
+    value = detail;
+    succeeded = true;
+  }
 
+  if (promise._state !== PENDING) {
+    // noop
+  } else if (hasCallback && succeeded) {
+      _resolve(promise, value);
+    } else if (failed) {
+      _reject(promise, error);
+    } else if (settled === FULFILLED) {
+      fulfill(promise, value);
+    } else if (settled === REJECTED) {
+      _reject(promise, value);
+    }
+}
+
+function initializePromise(promise, resolver) {
+  try {
+    resolver(function resolvePromise(value) {
+      _resolve(promise, value);
+    }, function rejectPromise(reason) {
+      _reject(promise, reason);
+    });
+  } catch (e) {
+    _reject(promise, e);
+  }
+}
+
+var id = 0;
+function nextId() {
+  return id++;
+}
+
+function makePromise(promise) {
+  promise[PROMISE_ID] = id++;
+  promise._state = undefined;
+  promise._result = undefined;
+  promise._subscribers = [];
+}
+
+function Enumerator(Constructor, input) {
+  this._instanceConstructor = Constructor;
+  this.promise = new Constructor(noop);
+
+  if (!this.promise[PROMISE_ID]) {
+    makePromise(this.promise);
+  }
+
+  if (isArray(input)) {
+    this._input = input;
+    this.length = input.length;
+    this._remaining = input.length;
+
+    this._result = new Array(this.length);
+
+    if (this.length === 0) {
+      fulfill(this.promise, this._result);
+    } else {
+      this.length = this.length || 0;
+      this._enumerate();
+      if (this._remaining === 0) {
+        fulfill(this.promise, this._result);
+      }
+    }
+  } else {
+    _reject(this.promise, validationError());
+  }
+}
+
+function validationError() {
+  return new Error('Array Methods must be provided an Array');
+};
+
+Enumerator.prototype._enumerate = function () {
+  var length = this.length;
+  var _input = this._input;
+
+  for (var i = 0; this._state === PENDING && i < length; i++) {
+    this._eachEntry(_input[i], i);
+  }
+};
+
+Enumerator.prototype._eachEntry = function (entry, i) {
+  var c = this._instanceConstructor;
+  var resolve$$ = c.resolve;
+
+  if (resolve$$ === resolve) {
+    var _then = getThen(entry);
+
+    if (_then === then && entry._state !== PENDING) {
+      this._settledAt(entry._state, i, entry._result);
+    } else if (typeof _then !== 'function') {
+      this._remaining--;
+      this._result[i] = entry;
+    } else if (c === Promise) {
+      var promise = new c(noop);
+      handleMaybeThenable(promise, entry, _then);
+      this._willSettleAt(promise, i);
+    } else {
+      this._willSettleAt(new c(function (resolve$$) {
+        return resolve$$(entry);
+      }), i);
+    }
+  } else {
+    this._willSettleAt(resolve$$(entry), i);
+  }
+};
+
+Enumerator.prototype._settledAt = function (state, i, value) {
+  var promise = this.promise;
+
+  if (promise._state === PENDING) {
+    this._remaining--;
+
+    if (state === REJECTED) {
+      _reject(promise, value);
+    } else {
+      this._result[i] = value;
+    }
+  }
+
+  if (this._remaining === 0) {
+    fulfill(promise, this._result);
+  }
+};
+
+Enumerator.prototype._willSettleAt = function (promise, i) {
+  var enumerator = this;
+
+  subscribe(promise, undefined, function (value) {
+    return enumerator._settledAt(FULFILLED, i, value);
+  }, function (reason) {
+    return enumerator._settledAt(REJECTED, i, reason);
+  });
+};
+
+/**
+  `Promise.all` accepts an array of promises, and returns a new promise which
+  is fulfilled with an array of fulfillment values for the passed promises, or
+  rejected with the reason of the first passed promise to be rejected. It casts all
+  elements of the passed iterable to promises as it runs this algorithm.
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = resolve(2);
+  let promise3 = resolve(3);
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // The array here would be [ 1, 2, 3 ];
+  });
+  ```
+
+  If any of the `promises` given to `all` are rejected, the first promise
+  that is rejected will be given as an argument to the returned promises's
+  rejection handler. For example:
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = reject(new Error("2"));
+  let promise3 = reject(new Error("3"));
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // Code here never runs because there are rejected promises!
+  }, function(error) {
+    // error.message === "2"
+  });
+  ```
+
+  @method all
+  @static
+  @param {Array} entries array of promises
+  @param {String} label optional string for labeling the promise.
+  Useful for tooling.
+  @return {Promise} promise that is fulfilled when all `promises` have been
+  fulfilled, or rejected if any of them become rejected.
+  @static
+*/
+function all(entries) {
+  return new Enumerator(this, entries).promise;
+}
+
+/**
+  `Promise.race` returns a new promise which is settled in the same way as the
+  first passed promise to settle.
+
+  Example:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 2');
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // result === 'promise 2' because it was resolved before promise1
+    // was resolved.
+  });
+  ```
+
+  `Promise.race` is deterministic in that only the state of the first
+  settled promise matters. For example, even if other promises given to the
+  `promises` array argument are resolved, but the first settled promise has
+  become rejected before the other promises became fulfilled, the returned
+  promise will become rejected:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      reject(new Error('promise 2'));
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // Code here never runs
+  }, function(reason){
+    // reason.message === 'promise 2' because promise 2 became rejected before
+    // promise 1 became fulfilled
+  });
+  ```
+
+  An example real-world use case is implementing timeouts:
+
+  ```javascript
+  Promise.race([ajax('foo.json'), timeout(5000)])
+  ```
+
+  @method race
+  @static
+  @param {Array} promises array of promises to observe
+  Useful for tooling.
+  @return {Promise} a promise which settles in the same way as the first passed
+  promise to settle.
+*/
+function race(entries) {
+  /*jshint validthis:true */
+  var Constructor = this;
+
+  if (!isArray(entries)) {
+    return new Constructor(function (_, reject) {
+      return reject(new TypeError('You must pass an array to race.'));
+    });
+  } else {
+    return new Constructor(function (resolve, reject) {
+      var length = entries.length;
+      for (var i = 0; i < length; i++) {
+        Constructor.resolve(entries[i]).then(resolve, reject);
+      }
+    });
+  }
+}
+
+/**
+  `Promise.reject` returns a promise rejected with the passed `reason`.
+  It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    reject(new Error('WHOOPS'));
+  });
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.reject(new Error('WHOOPS'));
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  @method reject
+  @static
+  @param {Any} reason value that the returned promise will be rejected with.
+  Useful for tooling.
+  @return {Promise} a promise rejected with the given `reason`.
+*/
+function reject(reason) {
+  /*jshint validthis:true */
+  var Constructor = this;
+  var promise = new Constructor(noop);
+  _reject(promise, reason);
+  return promise;
+}
+
+function needsResolver() {
+  throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+}
+
+function needsNew() {
+  throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+}
+
+/**
+  Promise objects represent the eventual result of an asynchronous operation. The
+  primary way of interacting with a promise is through its `then` method, which
+  registers callbacks to receive either a promise's eventual value or the reason
+  why the promise cannot be fulfilled.
+
+  Terminology
+  -----------
+
+  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+  - `thenable` is an object or function that defines a `then` method.
+  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+  - `exception` is a value that is thrown using the throw statement.
+  - `reason` is a value that indicates why a promise was rejected.
+  - `settled` the final resting state of a promise, fulfilled or rejected.
+
+  A promise can be in one of three states: pending, fulfilled, or rejected.
+
+  Promises that are fulfilled have a fulfillment value and are in the fulfilled
+  state.  Promises that are rejected have a rejection reason and are in the
+  rejected state.  A fulfillment value is never a thenable.
+
+  Promises can also be said to *resolve* a value.  If this value is also a
+  promise, then the original promise's settled state will match the value's
+  settled state.  So a promise that *resolves* a promise that rejects will
+  itself reject, and a promise that *resolves* a promise that fulfills will
+  itself fulfill.
+
+
+  Basic Usage:
+  ------------
+
+  ```js
+  let promise = new Promise(function(resolve, reject) {
+    // on success
+    resolve(value);
+
+    // on failure
+    reject(reason);
+  });
+
+  promise.then(function(value) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Advanced Usage:
+  ---------------
+
+  Promises shine when abstracting away asynchronous interactions such as
+  `XMLHttpRequest`s.
+
+  ```js
+  function getJSON(url) {
+    return new Promise(function(resolve, reject){
+      let xhr = new XMLHttpRequest();
+
+      xhr.open('GET', url);
+      xhr.onreadystatechange = handler;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.send();
+
+      function handler() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) {
+            resolve(this.response);
+          } else {
+            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+          }
+        }
+      };
+    });
+  }
+
+  getJSON('/posts.json').then(function(json) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Unlike callbacks, promises are great composable primitives.
+
+  ```js
+  Promise.all([
+    getJSON('/posts'),
+    getJSON('/comments')
+  ]).then(function(values){
+    values[0] // => postsJSON
+    values[1] // => commentsJSON
+
+    return values;
+  });
+  ```
+
+  @class Promise
+  @param {function} resolver
+  Useful for tooling.
+  @constructor
+*/
+function Promise(resolver) {
+  this[PROMISE_ID] = nextId();
+  this._result = this._state = undefined;
+  this._subscribers = [];
+
+  if (noop !== resolver) {
+    typeof resolver !== 'function' && needsResolver();
+    this instanceof Promise ? initializePromise(this, resolver) : needsNew();
+  }
+}
+
+Promise.all = all;
+Promise.race = race;
+Promise.resolve = resolve;
+Promise.reject = reject;
+Promise._setScheduler = setScheduler;
+Promise._setAsap = setAsap;
+Promise._asap = asap;
+
+Promise.prototype = {
+  constructor: Promise,
+
+  /**
+    The primary way of interacting with a promise is through its `then` method,
+    which registers callbacks to receive either a promise's eventual value or the
+    reason why the promise cannot be fulfilled.
+  
+    ```js
+    findUser().then(function(user){
+      // user is available
+    }, function(reason){
+      // user is unavailable, and you are given the reason why
+    });
+    ```
+  
+    Chaining
+    --------
+  
+    The return value of `then` is itself a promise.  This second, 'downstream'
+    promise is resolved with the return value of the first promise's fulfillment
+    or rejection handler, or rejected if the handler throws an exception.
+  
+    ```js
+    findUser().then(function (user) {
+      return user.name;
+    }, function (reason) {
+      return 'default name';
+    }).then(function (userName) {
+      // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
+      // will be `'default name'`
+    });
+  
+    findUser().then(function (user) {
+      throw new Error('Found user, but still unhappy');
+    }, function (reason) {
+      throw new Error('`findUser` rejected and we're unhappy');
+    }).then(function (value) {
+      // never reached
+    }, function (reason) {
+      // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
+      // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
+    });
+    ```
+    If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
+  
+    ```js
+    findUser().then(function (user) {
+      throw new PedagogicalException('Upstream error');
+    }).then(function (value) {
+      // never reached
+    }).then(function (value) {
+      // never reached
+    }, function (reason) {
+      // The `PedgagocialException` is propagated all the way down to here
+    });
+    ```
+  
+    Assimilation
+    ------------
+  
+    Sometimes the value you want to propagate to a downstream promise can only be
+    retrieved asynchronously. This can be achieved by returning a promise in the
+    fulfillment or rejection handler. The downstream promise will then be pending
+    until the returned promise is settled. This is called *assimilation*.
+  
+    ```js
+    findUser().then(function (user) {
+      return findCommentsByAuthor(user);
+    }).then(function (comments) {
+      // The user's comments are now available
+    });
+    ```
+  
+    If the assimliated promise rejects, then the downstream promise will also reject.
+  
+    ```js
+    findUser().then(function (user) {
+      return findCommentsByAuthor(user);
+    }).then(function (comments) {
+      // If `findCommentsByAuthor` fulfills, we'll have the value here
+    }, function (reason) {
+      // If `findCommentsByAuthor` rejects, we'll have the reason here
+    });
+    ```
+  
+    Simple Example
+    --------------
+  
+    Synchronous Example
+  
+    ```javascript
+    let result;
+  
+    try {
+      result = findResult();
+      // success
+    } catch(reason) {
+      // failure
+    }
+    ```
+  
+    Errback Example
+  
+    ```js
+    findResult(function(result, err){
+      if (err) {
+        // failure
+      } else {
+        // success
+      }
+    });
+    ```
+  
+    Promise Example;
+  
+    ```javascript
+    findResult().then(function(result){
+      // success
+    }, function(reason){
+      // failure
+    });
+    ```
+  
+    Advanced Example
+    --------------
+  
+    Synchronous Example
+  
+    ```javascript
+    let author, books;
+  
+    try {
+      author = findAuthor();
+      books  = findBooksByAuthor(author);
+      // success
+    } catch(reason) {
+      // failure
+    }
+    ```
+  
+    Errback Example
+  
+    ```js
+  
+    function foundBooks(books) {
+  
+    }
+  
+    function failure(reason) {
+  
+    }
+  
+    findAuthor(function(author, err){
+      if (err) {
+        failure(err);
+        // failure
+      } else {
+        try {
+          findBoooksByAuthor(author, function(books, err) {
+            if (err) {
+              failure(err);
+            } else {
+              try {
+                foundBooks(books);
+              } catch(reason) {
+                failure(reason);
+              }
+            }
+          });
+        } catch(error) {
+          failure(err);
+        }
+        // success
+      }
+    });
+    ```
+  
+    Promise Example;
+  
+    ```javascript
+    findAuthor().
+      then(findBooksByAuthor).
+      then(function(books){
+        // found books
+    }).catch(function(reason){
+      // something went wrong
+    });
+    ```
+  
+    @method then
+    @param {Function} onFulfilled
+    @param {Function} onRejected
+    Useful for tooling.
+    @return {Promise}
+  */
+  then: then,
+
+  /**
+    `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
+    as the catch block of a try/catch statement.
+  
+    ```js
+    function findAuthor(){
+      throw new Error('couldn't find that author');
+    }
+  
+    // synchronous
+    try {
+      findAuthor();
+    } catch(reason) {
+      // something went wrong
+    }
+  
+    // async with promises
+    findAuthor().catch(function(reason){
+      // something went wrong
+    });
+    ```
+  
+    @method catch
+    @param {Function} onRejection
+    Useful for tooling.
+    @return {Promise}
+  */
+  'catch': function _catch(onRejection) {
+    return this.then(null, onRejection);
+  }
+};
+
+function polyfill() {
+    var local = undefined;
+
+    if (typeof global !== 'undefined') {
+        local = global;
+    } else if (typeof self !== 'undefined') {
+        local = self;
+    } else {
+        try {
+            local = Function('return this')();
+        } catch (e) {
+            throw new Error('polyfill failed because global object is unavailable in this environment');
+        }
+    }
+
+    var P = local.Promise;
+
+    if (P) {
+        var promiseToString = null;
+        try {
+            promiseToString = Object.prototype.toString.call(P.resolve());
+        } catch (e) {
+            // silently ignored
+        }
+
+        if (promiseToString === '[object Promise]' && !P.cast) {
+            return;
+        }
+    }
+
+    local.Promise = Promise;
+}
+
+polyfill();
+// Strange compat..
+Promise.polyfill = polyfill;
+Promise.Promise = Promise;
+
+return Promise;
+
+})));
 
 }).call(this,_dereq_('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"_process":3}],3:[function(_dereq_,module,exports){
 // shim for using process in browser
-
 var process = module.exports = {};
 
 // cached from whatever global is present so that test runners that stub it
@@ -3916,22 +4109,84 @@ var process = module.exports = {};
 var cachedSetTimeout;
 var cachedClearTimeout;
 
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
 (function () {
-  try {
-    cachedSetTimeout = setTimeout;
-  } catch (e) {
-    cachedSetTimeout = function () {
-      throw new Error('setTimeout is not defined');
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
     }
-  }
-  try {
-    cachedClearTimeout = clearTimeout;
-  } catch (e) {
-    cachedClearTimeout = function () {
-      throw new Error('clearTimeout is not defined');
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
     }
-  }
 } ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
 var queue = [];
 var draining = false;
 var currentQueue;
@@ -3956,7 +4211,7 @@ function drainQueue() {
     if (draining) {
         return;
     }
-    var timeout = cachedSetTimeout(cleanUpNextTick);
+    var timeout = runTimeout(cleanUpNextTick);
     draining = true;
 
     var len = queue.length;
@@ -3973,7 +4228,7 @@ function drainQueue() {
     }
     currentQueue = null;
     draining = false;
-    cachedClearTimeout(timeout);
+    runClearTimeout(timeout);
 }
 
 process.nextTick = function (fun) {
@@ -3985,7 +4240,7 @@ process.nextTick = function (fun) {
     }
     queue.push(new Item(fun, args));
     if (queue.length === 1 && !draining) {
-        cachedSetTimeout(drainQueue, 0);
+        runTimeout(drainQueue);
     }
 };
 
@@ -4013,6 +4268,10 @@ process.off = noop;
 process.removeListener = noop;
 process.removeAllListeners = noop;
 process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
 
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
@@ -4026,7 +4285,8 @@ process.umask = function() { return 0; };
 
 },{}],4:[function(_dereq_,module,exports){
 (function (global){
-/*
+(function () {
+    var /*
  * Rusha, a JavaScript implementation of the Secure Hash Algorithm, SHA-1,
  * as defined in FIPS PUB 180-1, tuned for high performance with large inputs.
  * (http://github.com/srijs/rusha)
@@ -4054,70 +4314,81 @@ process.umask = function() { return 0; };
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-(function () {
-    var util = {
-            getDataType: function (data) {
-                if (typeof data === 'string') {
-                    return 'string';
-                }
-                if (data instanceof Array) {
-                    return 'array';
-                }
-                if (typeof global !== 'undefined' && global.Buffer && global.Buffer.isBuffer(data)) {
-                    return 'buffer';
-                }
-                if (data instanceof ArrayBuffer) {
-                    return 'arraybuffer';
-                }
-                if (data.buffer instanceof ArrayBuffer) {
-                    return 'view';
-                }
-                if (data instanceof Blob) {
-                    return 'blob';
-                }
-                throw new Error('Unsupported data type.');
+    util = {
+        getDataType: function (data) {
+            if (typeof data === 'string') {
+                return 'string';
             }
-        };
-    // The Rusha object is a wrapper around the low-level RushaCore.
-    // It provides means of converting different inputs to the
-    // format accepted by RushaCore as well as other utility methods.
+            if (data instanceof Array) {
+                return 'array';
+            }
+            if (typeof global !== 'undefined' && global.Buffer && global.Buffer.isBuffer(data)) {
+                return 'buffer';
+            }
+            if (data instanceof ArrayBuffer) {
+                return 'arraybuffer';
+            }
+            if (data.buffer instanceof ArrayBuffer) {
+                return 'view';
+            }
+            if (data instanceof Blob) {
+                return 'blob';
+            }
+            throw new Error('Unsupported data type.');
+        }
+    };
     function Rusha(chunkSize) {
         'use strict';
-        // Private object structure.
-        var self$2 = { fill: 0 };
-        // Calculate the length of buffer that the sha1 routine uses
+        var // Private object structure.
+        self$2 = { fill: 0 };
+        var // Calculate the length of buffer that the sha1 routine uses
         // including the padding.
-        var padlen = function (len) {
+        padlen = function (len) {
             for (len += 9; len % 64 > 0; len += 1);
             return len;
         };
         var padZeroes = function (bin, len) {
-            for (var i = len >> 2; i < bin.length; i++)
-                bin[i] = 0;
+            var h8 = new Uint8Array(bin.buffer);
+            var om = len % 4, align = len - om;
+            switch (om) {
+            case 0:
+                h8[align + 3] = 0;
+            case 1:
+                h8[align + 2] = 0;
+            case 2:
+                h8[align + 1] = 0;
+            case 3:
+                h8[align + 0] = 0;
+            }
+            for (var i$2 = (len >> 2) + 1; i$2 < bin.length; i$2++)
+                bin[i$2] = 0;
         };
         var padData = function (bin, chunkLen, msgLen) {
             bin[chunkLen >> 2] |= 128 << 24 - (chunkLen % 4 << 3);
-            bin[((chunkLen >> 2) + 2 & ~15) + 14] = msgLen >> 29;
+            // To support msgLen >= 2 GiB, use a float division when computing the
+            // high 32-bits of the big-endian message length in bits.
+            bin[((chunkLen >> 2) + 2 & ~15) + 14] = msgLen / (1 << 29) | 0;
             bin[((chunkLen >> 2) + 2 & ~15) + 15] = msgLen << 3;
         };
-        // Convert a binary string and write it to the heap.
+        var // Convert a binary string and write it to the heap.
         // A binary string is expected to only contain char codes < 256.
-        var convStr = function (H8, H32, start, len, off) {
-            var str = this, i, om = off % 4, lm = len % 4, j = len - lm;
-            if (j > 0) {
-                switch (om) {
-                case 0:
-                    H8[off + 3 | 0] = str.charCodeAt(start);
-                case 1:
-                    H8[off + 2 | 0] = str.charCodeAt(start + 1);
-                case 2:
-                    H8[off + 1 | 0] = str.charCodeAt(start + 2);
-                case 3:
-                    H8[off | 0] = str.charCodeAt(start + 3);
-                }
+        convStr = function (H8, H32, start, len, off) {
+            var str = this, i$2, om = off % 4, lm = (len + om) % 4, j = len - lm;
+            switch (om) {
+            case 0:
+                H8[off] = str.charCodeAt(start + 3);
+            case 1:
+                H8[off + 1 - (om << 1) | 0] = str.charCodeAt(start + 2);
+            case 2:
+                H8[off + 2 - (om << 1) | 0] = str.charCodeAt(start + 1);
+            case 3:
+                H8[off + 3 - (om << 1) | 0] = str.charCodeAt(start);
             }
-            for (i = om; i < j; i = i + 4 | 0) {
-                H32[off + i >> 2] = str.charCodeAt(start + i) << 24 | str.charCodeAt(start + i + 1) << 16 | str.charCodeAt(start + i + 2) << 8 | str.charCodeAt(start + i + 3);
+            if (len < lm + om) {
+                return;
+            }
+            for (i$2 = 4 - om; i$2 < j; i$2 = i$2 + 4 | 0) {
+                H32[off + i$2 >> 2] = str.charCodeAt(start + i$2) << 24 | str.charCodeAt(start + i$2 + 1) << 16 | str.charCodeAt(start + i$2 + 2) << 8 | str.charCodeAt(start + i$2 + 3);
             }
             switch (lm) {
             case 3:
@@ -4128,24 +4399,25 @@ process.umask = function() { return 0; };
                 H8[off + j + 3 | 0] = str.charCodeAt(start + j);
             }
         };
-        // Convert a buffer or array and write it to the heap.
+        var // Convert a buffer or array and write it to the heap.
         // The buffer or array is expected to only contain elements < 256.
-        var convBuf = function (H8, H32, start, len, off) {
-            var buf = this, i, om = off % 4, lm = len % 4, j = len - lm;
-            if (j > 0) {
-                switch (om) {
-                case 0:
-                    H8[off + 3 | 0] = buf[start];
-                case 1:
-                    H8[off + 2 | 0] = buf[start + 1];
-                case 2:
-                    H8[off + 1 | 0] = buf[start + 2];
-                case 3:
-                    H8[off | 0] = buf[start + 3];
-                }
+        convBuf = function (H8, H32, start, len, off) {
+            var buf = this, i$2, om = off % 4, lm = (len + om) % 4, j = len - lm;
+            switch (om) {
+            case 0:
+                H8[off] = buf[start + 3];
+            case 1:
+                H8[off + 1 - (om << 1) | 0] = buf[start + 2];
+            case 2:
+                H8[off + 2 - (om << 1) | 0] = buf[start + 1];
+            case 3:
+                H8[off + 3 - (om << 1) | 0] = buf[start];
             }
-            for (i = 4 - om; i < j; i = i += 4 | 0) {
-                H32[off + i >> 2] = buf[start + i] << 24 | buf[start + i + 1] << 16 | buf[start + i + 2] << 8 | buf[start + i + 3];
+            if (len < lm + om) {
+                return;
+            }
+            for (i$2 = 4 - om; i$2 < j; i$2 = i$2 + 4 | 0) {
+                H32[off + i$2 >> 2 | 0] = buf[start + i$2] << 24 | buf[start + i$2 + 1] << 16 | buf[start + i$2 + 2] << 8 | buf[start + i$2 + 3];
             }
             switch (lm) {
             case 3:
@@ -4157,22 +4429,23 @@ process.umask = function() { return 0; };
             }
         };
         var convBlob = function (H8, H32, start, len, off) {
-            var blob = this, i, om = off % 4, lm = len % 4, j = len - lm;
+            var blob = this, i$2, om = off % 4, lm = (len + om) % 4, j = len - lm;
             var buf = new Uint8Array(reader.readAsArrayBuffer(blob.slice(start, start + len)));
-            if (j > 0) {
-                switch (om) {
-                case 0:
-                    H8[off + 3 | 0] = buf[0];
-                case 1:
-                    H8[off + 2 | 0] = buf[1];
-                case 2:
-                    H8[off + 1 | 0] = buf[2];
-                case 3:
-                    H8[off | 0] = buf[3];
-                }
+            switch (om) {
+            case 0:
+                H8[off] = buf[3];
+            case 1:
+                H8[off + 1 - (om << 1) | 0] = buf[2];
+            case 2:
+                H8[off + 2 - (om << 1) | 0] = buf[1];
+            case 3:
+                H8[off + 3 - (om << 1) | 0] = buf[0];
             }
-            for (i = 4 - om; i < j; i = i += 4 | 0) {
-                H32[off + i >> 2] = buf[i] << 24 | buf[i + 1] << 16 | buf[i + 2] << 8 | buf[i + 3];
+            if (len < lm + om) {
+                return;
+            }
+            for (i$2 = 4 - om; i$2 < j; i$2 = i$2 + 4 | 0) {
+                H32[off + i$2 >> 2 | 0] = buf[i$2] << 24 | buf[i$2 + 1] << 16 | buf[i$2 + 2] << 8 | buf[i$2 + 3];
             }
             switch (lm) {
             case 3:
@@ -4213,12 +4486,17 @@ process.umask = function() { return 0; };
                 return data.buffer.slice(offset);
             }
         };
-        // Convert an ArrayBuffer into its hexadecimal string representation.
-        var hex = function (arrayBuffer) {
-            var i, x, hex_tab = '0123456789abcdef', res = [], binarray = new Uint8Array(arrayBuffer);
-            for (i = 0; i < binarray.length; i++) {
-                x = binarray[i];
-                res[i] = hex_tab.charAt(x >> 4 & 15) + hex_tab.charAt(x >> 0 & 15);
+        var // Precompute 00 - ff strings
+        precomputedHex = new Array(256);
+        for (var i = 0; i < 256; i++) {
+            precomputedHex[i] = (i < 16 ? '0' : '') + i.toString(16);
+        }
+        var // Convert an ArrayBuffer into its hexadecimal string representation.
+        hex = function (arrayBuffer) {
+            var binarray = new Uint8Array(arrayBuffer);
+            var res = new Array(arrayBuffer.byteLength);
+            for (var i$2 = 0; i$2 < res.length; i$2++) {
+                res[i$2] = precomputedHex[binarray[i$2]];
             }
             return res.join('');
         };
@@ -4228,24 +4506,25 @@ process.umask = function() { return 0; };
             // 2^n for n in [12, 24) or 2^24 * n for n ≥ 1.
             // Also, byteLengths smaller than 2^16 are deprecated.
             var p;
-            // If v is smaller than 2^16, the smallest possible solution
-            // is 2^16.
-            if (v <= 65536)
+            if (// If v is smaller than 2^16, the smallest possible solution
+                // is 2^16.
+                v <= 65536)
                 return 65536;
-            // If v < 2^24, we round up to 2^n,
-            // otherwise we round up to 2^24 * n.
-            if (v < 16777216) {
+            if (// If v < 2^24, we round up to 2^n,
+                // otherwise we round up to 2^24 * n.
+                v < 16777216) {
                 for (p = 1; p < v; p = p << 1);
             } else {
                 for (p = 16777216; p < v; p += 16777216);
             }
             return p;
         };
-        // Initialize the internal data structures to a new capacity.
-        var init = function (size) {
+        var // Initialize the internal data structures to a new capacity.
+        init = function (size) {
             if (size % 64 > 0) {
                 throw new Error('Chunk size must be a multiple of 128 bit');
             }
+            self$2.offset = 0;
             self$2.maxChunkLen = size;
             self$2.padMaxChunkLen = padlen(size);
             // The size of the heap is the sum of:
@@ -4265,6 +4544,7 @@ process.umask = function() { return 0; };
         // to a chunk siyze.
         init(chunkSize || 64 * 1024);
         var initState = function (heap, padMsgLen) {
+            self$2.offset = 0;
             var io = new Int32Array(heap, padMsgLen + 320, 5);
             io[0] = 1732584193;
             io[1] = -271733879;
@@ -4279,18 +4559,18 @@ process.umask = function() { return 0; };
             padData(view, chunkLen, msgLen);
             return padChunkLen;
         };
-        // Write data to the heap.
-        var write = function (data, chunkOffset, chunkLen) {
-            convFn(data)(self$2.h8, self$2.h32, chunkOffset, chunkLen, 0);
+        var // Write data to the heap.
+        write = function (data, chunkOffset, chunkLen, off) {
+            convFn(data)(self$2.h8, self$2.h32, chunkOffset, chunkLen, off || 0);
         };
-        // Initialize and call the RushaCore,
+        var // Initialize and call the RushaCore,
         // assuming an input buffer of length len * 4.
-        var coreCall = function (data, chunkOffset, chunkLen, msgLen, finalize) {
+        coreCall = function (data, chunkOffset, chunkLen, msgLen, finalize) {
             var padChunkLen = chunkLen;
+            write(data, chunkOffset, chunkLen);
             if (finalize) {
                 padChunkLen = padChunk(chunkLen, msgLen);
             }
-            write(data, chunkOffset, chunkLen);
             self$2.core.hash(padChunkLen, self$2.padMaxChunkLen);
         };
         var getRawDigest = function (heap, padMaxChunkLen) {
@@ -4304,21 +4584,79 @@ process.umask = function() { return 0; };
             arr.setInt32(16, io[4], false);
             return out;
         };
-        // Calculate the hash digest as an array of 5 32bit integers.
-        var rawDigest = this.rawDigest = function (str) {
-                var msgLen = str.byteLength || str.length || str.size || 0;
-                initState(self$2.heap, self$2.padMaxChunkLen);
-                var chunkOffset = 0, chunkLen = self$2.maxChunkLen, last;
-                for (chunkOffset = 0; msgLen > chunkOffset + chunkLen; chunkOffset += chunkLen) {
-                    coreCall(str, chunkOffset, chunkLen, msgLen, false);
-                }
-                coreCall(str, chunkOffset, msgLen - chunkOffset, msgLen, true);
-                return getRawDigest(self$2.heap, self$2.padMaxChunkLen);
-            };
+        var // Calculate the hash digest as an array of 5 32bit integers.
+        rawDigest = this.rawDigest = function (str) {
+            var msgLen = str.byteLength || str.length || str.size || 0;
+            initState(self$2.heap, self$2.padMaxChunkLen);
+            var chunkOffset = 0, chunkLen = self$2.maxChunkLen;
+            for (chunkOffset = 0; msgLen > chunkOffset + chunkLen; chunkOffset += chunkLen) {
+                coreCall(str, chunkOffset, chunkLen, msgLen, false);
+            }
+            coreCall(str, chunkOffset, msgLen - chunkOffset, msgLen, true);
+            return getRawDigest(self$2.heap, self$2.padMaxChunkLen);
+        };
         // The digest and digestFrom* interface returns the hash digest
         // as a hex string.
         this.digest = this.digestFromString = this.digestFromBuffer = this.digestFromArrayBuffer = function (str) {
             return hex(rawDigest(str).buffer);
+        };
+        this.resetState = function () {
+            initState(self$2.heap, self$2.padMaxChunkLen);
+            return this;
+        };
+        this.append = function (chunk) {
+            var chunkOffset = 0;
+            var chunkLen = chunk.byteLength || chunk.length || chunk.size || 0;
+            var turnOffset = self$2.offset % self$2.maxChunkLen;
+            var inputLen;
+            self$2.offset += chunkLen;
+            while (chunkOffset < chunkLen) {
+                inputLen = Math.min(chunkLen - chunkOffset, self$2.maxChunkLen - turnOffset);
+                write(chunk, chunkOffset, inputLen, turnOffset);
+                turnOffset += inputLen;
+                chunkOffset += inputLen;
+                if (turnOffset === self$2.maxChunkLen) {
+                    self$2.core.hash(self$2.maxChunkLen, self$2.padMaxChunkLen);
+                    turnOffset = 0;
+                }
+            }
+            return this;
+        };
+        this.getState = function () {
+            var turnOffset = self$2.offset % self$2.maxChunkLen;
+            var heap;
+            if (!turnOffset) {
+                var io = new Int32Array(self$2.heap, self$2.padMaxChunkLen + 320, 5);
+                heap = io.buffer.slice(io.byteOffset, io.byteOffset + io.byteLength);
+            } else {
+                heap = self$2.heap.slice(0);
+            }
+            return {
+                offset: self$2.offset,
+                heap: heap
+            };
+        };
+        this.setState = function (state) {
+            self$2.offset = state.offset;
+            if (state.heap.byteLength === 20) {
+                var io = new Int32Array(self$2.heap, self$2.padMaxChunkLen + 320, 5);
+                io.set(new Int32Array(state.heap));
+            } else {
+                self$2.h32.set(new Int32Array(state.heap));
+            }
+            return this;
+        };
+        var rawEnd = this.rawEnd = function () {
+            var msgLen = self$2.offset;
+            var chunkLen = msgLen % self$2.maxChunkLen;
+            var padChunkLen = padChunk(chunkLen, msgLen);
+            self$2.core.hash(padChunkLen, self$2.padMaxChunkLen);
+            var result = getRawDigest(self$2.heap, self$2.padMaxChunkLen);
+            initState(self$2.heap, self$2.padMaxChunkLen);
+            return result;
+        };
+        this.end = function () {
+            return hex(rawEnd().buffer);
         };
     }
     ;
@@ -4411,31 +4749,71 @@ process.umask = function() { return 0; };
         }
         return { hash: hash };
     };
-    // If we'e running in Node.JS, export a module.
-    if (typeof module !== 'undefined') {
+    if (// If we'e running in Node.JS, export a module.
+        typeof module !== 'undefined') {
         module.exports = Rusha;
-    } else if (typeof window !== 'undefined') {
+    } else if (// If we're running in a DOM context, export
+        // the Rusha object to toplevel.
+        typeof window !== 'undefined') {
         window.Rusha = Rusha;
     }
-    // If we're running in a webworker, accept
-    // messages containing a jobid and a buffer
-    // or blob object, and return the hash result.
-    if (typeof FileReaderSync !== 'undefined') {
-        var reader = new FileReaderSync(), hasher = new Rusha(4 * 1024 * 1024);
-        self.onmessage = function onMessage(event) {
-            var hash, data = event.data.data;
+    if (// If we're running in a webworker, accept
+        // messages containing a jobid and a buffer
+        // or blob object, and return the hash result.
+        typeof FileReaderSync !== 'undefined') {
+        var reader = new FileReaderSync();
+        var hashData = function hash(hasher, data, cb) {
             try {
-                hash = hasher.digest(data);
-                self.postMessage({
-                    id: event.data.id,
-                    hash: hash
-                });
+                return cb(null, hasher.digest(data));
             } catch (e) {
-                self.postMessage({
-                    id: event.data.id,
-                    error: e.name
-                });
+                return cb(e);
             }
+        };
+        var hashFile = function hashArrayBuffer(hasher, readTotal, blockSize, file, cb) {
+            var reader$2 = new self.FileReader();
+            reader$2.onloadend = function onloadend() {
+                var buffer = reader$2.result;
+                readTotal += reader$2.result.byteLength;
+                try {
+                    hasher.append(buffer);
+                } catch (e) {
+                    cb(e);
+                    return;
+                }
+                if (readTotal < file.size) {
+                    hashFile(hasher, readTotal, blockSize, file, cb);
+                } else {
+                    cb(null, hasher.end());
+                }
+            };
+            reader$2.readAsArrayBuffer(file.slice(readTotal, readTotal + blockSize));
+        };
+        self.onmessage = function onMessage(event) {
+            var data = event.data.data, file = event.data.file, id = event.data.id;
+            if (typeof id === 'undefined')
+                return;
+            if (!file && !data)
+                return;
+            var blockSize = event.data.blockSize || 4 * 1024 * 1024;
+            var hasher = new Rusha(blockSize);
+            hasher.resetState();
+            var done = function done$2(err, hash) {
+                if (!err) {
+                    self.postMessage({
+                        id: id,
+                        hash: hash
+                    });
+                } else {
+                    self.postMessage({
+                        id: id,
+                        error: err.name
+                    });
+                }
+            };
+            if (data)
+                hashData(hasher, data, done);
+            if (file)
+                hashFile(hasher, 0, blockSize, file, done);
         };
     }
 }());
@@ -5675,6 +6053,7 @@ BF.blockSize = BF.prototype.blockSize = 16;
 // cast5.js is a Javascript implementation of CAST-128, as defined in RFC 2144.
 // CAST-128 is a common OpenPGP cipher.
 
+
 // CAST5 constructor
 
 /** @module crypto/cipher/cast5 */
@@ -6202,6 +6581,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
   return result;
 } //end of des
 
+
 //des_createKeys
 //this takes as input a 64 bit key (even though only 56 bits are used)
 //as an array of 2 integers, and returns 16 48 bit keys
@@ -6296,6 +6676,7 @@ function des_createKeys(key) {
   //return the keys we've created
   return keys;
 } //end of des_createKeys
+
 
 function des_addPadding(message, padding) {
   var padLength = 8 - message.length % 8;
@@ -7138,6 +7519,7 @@ function decrypt(cipher, ciphertext, key, iv) {
 //   Helper functions   //
 //                      //
 //////////////////////////
+
 
 function webEncrypt(pt, key, iv) {
   return webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']).then(function (keyObj) {
@@ -11687,7 +12069,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _mpi = _dereq_('../type/mpi.js');
 
@@ -12931,7 +13313,7 @@ exports.HKP = exports.AsyncProxy = exports.Keyring = exports.crypto = exports.co
 var _openpgp = _dereq_('./openpgp');
 
 Object.keys(_openpgp).forEach(function (key) {
-  if (key === "default") return;
+  if (key === "default" || key === "__esModule") return;
   Object.defineProperty(exports, key, {
     enumerable: true,
     get: function get() {
@@ -13759,10 +14141,9 @@ Key.prototype.revoke = function () {};
  * @return {module:key~Key} new public key with new certificate signature
  */
 Key.prototype.signPrimaryUser = function (privateKeys) {
-  var _ref = this.getPrimaryUser() || {};
-
-  var index = _ref.index;
-  var user = _ref.user;
+  var _ref = this.getPrimaryUser() || {},
+      index = _ref.index,
+      user = _ref.user;
 
   if (!user) {
     throw new Error('Could not find primary user');
@@ -13795,9 +14176,8 @@ Key.prototype.signAllUsers = function (privateKeys) {
  * @return {Array<({keyid: module:type/keyid, valid: Boolean})>} list of signer's keyid and validity of signature
  */
 Key.prototype.verifyPrimaryUser = function (keys) {
-  var _ref2 = this.getPrimaryUser() || {};
-
-  var user = _ref2.user;
+  var _ref2 = this.getPrimaryUser() || {},
+      user = _ref2.user;
 
   if (!user) {
     throw new Error('Could not find primary user');
@@ -15145,8 +15525,8 @@ function encryptSessionKey(sessionKey, symAlgo, publicKeys, passwords) {
  * @return {module:message~Message}       new message with signed content
  */
 Message.prototype.sign = function () {
-  var privateKeys = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-  var signature = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+  var privateKeys = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  var signature = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
 
   var packetlist = new _packet2.default.List();
@@ -15159,6 +15539,7 @@ Message.prototype.sign = function () {
   var literalFormat = _enums2.default.write(_enums2.default.literal, literalDataPacket.format);
   var signatureType = literalFormat === _enums2.default.literal.binary ? _enums2.default.signature.binary : _enums2.default.signature.text;
   var i, signingKeyPacket, existingSigPacketlist, onePassSig;
+  var vSigningKeyPackets = [];
 
   if (signature) {
     existingSigPacketlist = signature.packets.filterByTag(_enums2.default.packet.signature);
@@ -15195,12 +15576,14 @@ Message.prototype.sign = function () {
       onePassSig.flags = 1;
     }
     packetlist.push(onePassSig);
+    vSigningKeyPackets.push(signingKeyPacket);
   }
 
   packetlist.push(literalDataPacket);
 
   for (i = privateKeys.length - 1; i >= 0; i--) {
     var signaturePacket = new _packet2.default.Signature();
+    signingKeyPacket = vSigningKeyPackets[i];
     signaturePacket.signatureType = signatureType;
     signaturePacket.hashAlgorithm = _config2.default.prefer_hash_algorithm;
     signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
@@ -15225,8 +15608,8 @@ Message.prototype.sign = function () {
  * @return {module:signature~Signature}      new detached signature of message content
  */
 Message.prototype.signDetached = function () {
-  var privateKeys = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-  var signature = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+  var privateKeys = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  var signature = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
 
   var packetlist = new _packet2.default.List();
@@ -15517,11 +15900,13 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 _es6Promise2.default.polyfill(); // load ES6 Promises polyfill
 
+
 //////////////////////////
 //                      //
 //   Web Worker setup   //
 //                      //
 //////////////////////////
+
 
 var asyncProxy = void 0; // instance of the asyncproxy
 
@@ -15531,11 +15916,10 @@ var asyncProxy = void 0; // instance of the asyncproxy
  * @param {Object} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  */
 function initWorker() {
-  var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-  var _ref$path = _ref.path;
-  var path = _ref$path === undefined ? 'openpgp.worker.js' : _ref$path;
-  var worker = _ref.worker;
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      _ref$path = _ref.path,
+      path = _ref$path === undefined ? 'openpgp.worker.js' : _ref$path,
+      worker = _ref.worker;
 
   if (worker || typeof window !== 'undefined' && window.Worker) {
     asyncProxy = new _async_proxy2.default({ path: path, worker: worker, config: _config2.default });
@@ -15564,6 +15948,7 @@ function destroyWorker() {
 //                  //
 //////////////////////
 
+
 /**
  * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
@@ -15576,17 +15961,16 @@ function destroyWorker() {
  * @static
  */
 function generateKey() {
-  var _ref2 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-  var _ref2$userIds = _ref2.userIds;
-  var userIds = _ref2$userIds === undefined ? [] : _ref2$userIds;
-  var passphrase = _ref2.passphrase;
-  var _ref2$numBits = _ref2.numBits;
-  var numBits = _ref2$numBits === undefined ? 2048 : _ref2$numBits;
-  var _ref2$unlocked = _ref2.unlocked;
-  var unlocked = _ref2$unlocked === undefined ? false : _ref2$unlocked;
-  var _ref2$keyExpirationTi = _ref2.keyExpirationTime;
-  var keyExpirationTime = _ref2$keyExpirationTi === undefined ? 0 : _ref2$keyExpirationTi;
+  var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      _ref2$userIds = _ref2.userIds,
+      userIds = _ref2$userIds === undefined ? [] : _ref2$userIds,
+      passphrase = _ref2.passphrase,
+      _ref2$numBits = _ref2.numBits,
+      numBits = _ref2$numBits === undefined ? 2048 : _ref2$numBits,
+      _ref2$unlocked = _ref2.unlocked,
+      unlocked = _ref2$unlocked === undefined ? false : _ref2$unlocked,
+      _ref2$keyExpirationTi = _ref2.keyExpirationTime,
+      keyExpirationTime = _ref2$keyExpirationTi === undefined ? 0 : _ref2$keyExpirationTi;
 
   var options = formatUserIds({ userIds: userIds, passphrase: passphrase, numBits: numBits, unlocked: unlocked, keyExpirationTime: keyExpirationTime });
 
@@ -15617,17 +16001,16 @@ function generateKey() {
  * @static
  */
 function reformatKey() {
-  var _ref3 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-  var privateKey = _ref3.privateKey;
-  var _ref3$userIds = _ref3.userIds;
-  var userIds = _ref3$userIds === undefined ? [] : _ref3$userIds;
-  var _ref3$passphrase = _ref3.passphrase;
-  var passphrase = _ref3$passphrase === undefined ? "" : _ref3$passphrase;
-  var _ref3$unlocked = _ref3.unlocked;
-  var unlocked = _ref3$unlocked === undefined ? false : _ref3$unlocked;
-  var _ref3$keyExpirationTi = _ref3.keyExpirationTime;
-  var keyExpirationTime = _ref3$keyExpirationTi === undefined ? 0 : _ref3$keyExpirationTi;
+  var _ref3 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      privateKey = _ref3.privateKey,
+      _ref3$userIds = _ref3.userIds,
+      userIds = _ref3$userIds === undefined ? [] : _ref3$userIds,
+      _ref3$passphrase = _ref3.passphrase,
+      passphrase = _ref3$passphrase === undefined ? "" : _ref3$passphrase,
+      _ref3$unlocked = _ref3.unlocked,
+      unlocked = _ref3$unlocked === undefined ? false : _ref3$unlocked,
+      _ref3$keyExpirationTi = _ref3.keyExpirationTime,
+      keyExpirationTime = _ref3$keyExpirationTi === undefined ? 0 : _ref3$keyExpirationTi;
 
   var options = formatUserIds({ privateKey: privateKey, userIds: userIds, passphrase: passphrase, unlocked: unlocked, keyExpirationTime: keyExpirationTime });
 
@@ -15653,8 +16036,8 @@ function reformatKey() {
  * @return {Key}                 the unlocked private key
  */
 function decryptKey(_ref4) {
-  var privateKey = _ref4.privateKey;
-  var passphrase = _ref4.passphrase;
+  var privateKey = _ref4.privateKey,
+      passphrase = _ref4.passphrase;
 
   if (asyncProxy) {
     // use web worker if available
@@ -15678,6 +16061,7 @@ function decryptKey(_ref4) {
 //                                       //
 ///////////////////////////////////////////
 
+
 /**
  * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
  *   must be specified. If private keys are specified, those will be used to sign the message.
@@ -15695,17 +16079,17 @@ function decryptKey(_ref4) {
  * @static
  */
 function encrypt(_ref5) {
-  var data = _ref5.data;
-  var publicKeys = _ref5.publicKeys;
-  var privateKeys = _ref5.privateKeys;
-  var passwords = _ref5.passwords;
-  var filename = _ref5.filename;
-  var _ref5$armor = _ref5.armor;
-  var armor = _ref5$armor === undefined ? true : _ref5$armor;
-  var _ref5$detached = _ref5.detached;
-  var detached = _ref5$detached === undefined ? false : _ref5$detached;
-  var _ref5$signature = _ref5.signature;
-  var signature = _ref5$signature === undefined ? null : _ref5$signature;
+  var data = _ref5.data,
+      publicKeys = _ref5.publicKeys,
+      privateKeys = _ref5.privateKeys,
+      passwords = _ref5.passwords,
+      filename = _ref5.filename,
+      _ref5$armor = _ref5.armor,
+      armor = _ref5$armor === undefined ? true : _ref5$armor,
+      _ref5$detached = _ref5.detached,
+      detached = _ref5$detached === undefined ? false : _ref5$detached,
+      _ref5$signature = _ref5.signature,
+      signature = _ref5$signature === undefined ? null : _ref5$signature;
 
   checkData(data);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
@@ -15759,15 +16143,15 @@ function encrypt(_ref5) {
  * @static
  */
 function decrypt(_ref6) {
-  var message = _ref6.message;
-  var privateKey = _ref6.privateKey;
-  var publicKeys = _ref6.publicKeys;
-  var sessionKey = _ref6.sessionKey;
-  var password = _ref6.password;
-  var _ref6$format = _ref6.format;
-  var format = _ref6$format === undefined ? 'utf8' : _ref6$format;
-  var _ref6$signature = _ref6.signature;
-  var signature = _ref6$signature === undefined ? null : _ref6$signature;
+  var message = _ref6.message,
+      privateKey = _ref6.privateKey,
+      publicKeys = _ref6.publicKeys,
+      sessionKey = _ref6.sessionKey,
+      password = _ref6.password,
+      _ref6$format = _ref6.format,
+      format = _ref6$format === undefined ? 'utf8' : _ref6$format,
+      _ref6$signature = _ref6.signature,
+      signature = _ref6$signature === undefined ? null : _ref6$signature;
 
   checkMessage(message);publicKeys = toArray(publicKeys);
 
@@ -15801,6 +16185,7 @@ function decrypt(_ref6) {
 //                                      //
 //////////////////////////////////////////
 
+
 /**
  * Signs a cleartext message.
  * @param  {String | Uint8Array} data           cleartext input to be signed
@@ -15813,12 +16198,12 @@ function decrypt(_ref6) {
  * @static
  */
 function sign(_ref7) {
-  var data = _ref7.data;
-  var privateKeys = _ref7.privateKeys;
-  var _ref7$armor = _ref7.armor;
-  var armor = _ref7$armor === undefined ? true : _ref7$armor;
-  var _ref7$detached = _ref7.detached;
-  var detached = _ref7$detached === undefined ? false : _ref7$detached;
+  var data = _ref7.data,
+      privateKeys = _ref7.privateKeys,
+      _ref7$armor = _ref7.armor,
+      armor = _ref7$armor === undefined ? true : _ref7$armor,
+      _ref7$detached = _ref7.detached,
+      detached = _ref7$detached === undefined ? false : _ref7$detached;
 
   checkData(data);
   privateKeys = toArray(privateKeys);
@@ -15868,10 +16253,10 @@ function sign(_ref7) {
  * @static
  */
 function verify(_ref8) {
-  var message = _ref8.message;
-  var publicKeys = _ref8.publicKeys;
-  var _ref8$signature = _ref8.signature;
-  var signature = _ref8$signature === undefined ? null : _ref8$signature;
+  var message = _ref8.message,
+      publicKeys = _ref8.publicKeys,
+      _ref8$signature = _ref8.signature,
+      signature = _ref8$signature === undefined ? null : _ref8$signature;
 
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
@@ -15904,6 +16289,7 @@ function verify(_ref8) {
 //                                           //
 ///////////////////////////////////////////////
 
+
 /**
  * Encrypt a symmetric session key with public keys, passwords, or both at once. At least either public keys
  *   or passwords must be specified.
@@ -15915,10 +16301,10 @@ function verify(_ref8) {
  * @static
  */
 function encryptSessionKey(_ref9) {
-  var data = _ref9.data;
-  var algorithm = _ref9.algorithm;
-  var publicKeys = _ref9.publicKeys;
-  var passwords = _ref9.passwords;
+  var data = _ref9.data,
+      algorithm = _ref9.algorithm,
+      publicKeys = _ref9.publicKeys,
+      passwords = _ref9.passwords;
 
   checkBinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);
 
@@ -15948,9 +16334,9 @@ function encryptSessionKey(_ref9) {
  * @static
  */
 function decryptSessionKey(_ref10) {
-  var message = _ref10.message;
-  var privateKey = _ref10.privateKey;
-  var password = _ref10.password;
+  var message = _ref10.message,
+      privateKey = _ref10.privateKey,
+      password = _ref10.password;
 
   checkMessage(message);
 
@@ -15969,6 +16355,7 @@ function decryptSessionKey(_ref10) {
 //   Helper functions   //
 //                      //
 //////////////////////////
+
 
 /**
  * Input validation
@@ -16404,6 +16791,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 //                          //
 //////////////////////////////
 
+
 /**
  * Create a packetlist from the correspoding object types.
  * @param  {Object} options   the object passed to and from the web worker
@@ -16455,6 +16843,7 @@ function verificationObjectToClone(verObject) {
 //   Clone --> Packetlist   //
 //                          //
 //////////////////////////////
+
 
 /**
  * Creates an object with the correct prototype from a corresponding packetlist.
@@ -16906,6 +17295,7 @@ Literal.prototype.write = function () {
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 
 /**
  * Implementation of the strange "Marker packet" (Tag 10)<br/>
@@ -18578,96 +18968,86 @@ function Signature() {
  * @return {module:packet/signature} object representation
  */
 Signature.prototype.read = function (bytes) {
-  var _this = this;
-
   var i = 0;
   this.version = bytes[i++];
   // switch on version (3 and 4)
-  var sigpos;
-  var sigDataLength;
+  switch (this.version) {
+    case 3:
+      // One-octet length of following hashed material. MUST be 5.
+      if (bytes[i++] !== 5) {
+        _util2.default.print_debug("packet/signature.js\n" + 'invalid One-octet length of following hashed material.' + 'MUST be 5. @:' + (i - 1));
+      }
 
-  (function () {
-    switch (_this.version) {
-      case 3:
-        // One-octet length of following hashed material. MUST be 5.
-        if (bytes[i++] !== 5) {
-          _util2.default.print_debug("packet/signature.js\n" + 'invalid One-octet length of following hashed material.' + 'MUST be 5. @:' + (i - 1));
+      var sigpos = i;
+      // One-octet signature type.
+      this.signatureType = bytes[i++];
+
+      // Four-octet creation time.
+      this.created = _util2.default.readDate(bytes.subarray(i, i + 4));
+      i += 4;
+
+      // storing data appended to data which gets verified
+      this.signatureData = bytes.subarray(sigpos, i);
+
+      // Eight-octet Key ID of signer.
+      this.issuerKeyId.read(bytes.subarray(i, i + 8));
+      i += 8;
+
+      // One-octet public-key algorithm.
+      this.publicKeyAlgorithm = bytes[i++];
+
+      // One-octet hash algorithm.
+      this.hashAlgorithm = bytes[i++];
+      break;
+    case 4:
+      this.signatureType = bytes[i++];
+      this.publicKeyAlgorithm = bytes[i++];
+      this.hashAlgorithm = bytes[i++];
+
+      var subpackets = function subpackets(bytes) {
+        // Two-octet scalar octet count for following subpacket data.
+        var subpacket_length = _util2.default.readNumber(bytes.subarray(0, 2));
+
+        var i = 2;
+
+        // subpacket data set (zero or more subpackets)
+        while (i < 2 + subpacket_length) {
+
+          var len = _packet2.default.readSimpleLength(bytes.subarray(i, bytes.length));
+          i += len.offset;
+
+          this.read_sub_packet(bytes.subarray(i, i + len.len));
+
+          i += len.len;
         }
 
-        sigpos = i;
-        // One-octet signature type.
+        return i;
+      };
 
-        _this.signatureType = bytes[i++];
-
-        // Four-octet creation time.
-        _this.created = _util2.default.readDate(bytes.subarray(i, i + 4));
-        i += 4;
-
-        // storing data appended to data which gets verified
-        _this.signatureData = bytes.subarray(sigpos, i);
-
-        // Eight-octet Key ID of signer.
-        _this.issuerKeyId.read(bytes.subarray(i, i + 8));
-        i += 8;
-
-        // One-octet public-key algorithm.
-        _this.publicKeyAlgorithm = bytes[i++];
-
-        // One-octet hash algorithm.
-        _this.hashAlgorithm = bytes[i++];
-        break;
-      case 4:
-        _this.signatureType = bytes[i++];
-        _this.publicKeyAlgorithm = bytes[i++];
-        _this.hashAlgorithm = bytes[i++];
-
-        var subpackets = function subpackets(bytes) {
-          // Two-octet scalar octet count for following subpacket data.
-          var subpacket_length = _util2.default.readNumber(bytes.subarray(0, 2));
-
-          var i = 2;
-
-          // subpacket data set (zero or more subpackets)
-          while (i < 2 + subpacket_length) {
-
-            var len = _packet2.default.readSimpleLength(bytes.subarray(i, bytes.length));
-            i += len.offset;
-
-            this.read_sub_packet(bytes.subarray(i, i + len.len));
-
-            i += len.len;
-          }
-
-          return i;
-        };
-
-        // hashed subpackets
+      // hashed subpackets
 
 
-        i += subpackets.call(_this, bytes.subarray(i, bytes.length), true);
+      i += subpackets.call(this, bytes.subarray(i, bytes.length), true);
 
-        // A V4 signature hashes the packet body
-        // starting from its first field, the version number, through the end
-        // of the hashed subpacket data.  Thus, the fields hashed are the
-        // signature version, the signature type, the public-key algorithm, the
-        // hash algorithm, the hashed subpacket length, and the hashed
-        // subpacket body.
-        _this.signatureData = bytes.subarray(0, i);
-        sigDataLength = i;
+      // A V4 signature hashes the packet body
+      // starting from its first field, the version number, through the end
+      // of the hashed subpacket data.  Thus, the fields hashed are the
+      // signature version, the signature type, the public-key algorithm, the
+      // hash algorithm, the hashed subpacket length, and the hashed
+      // subpacket body.
+      this.signatureData = bytes.subarray(0, i);
+      var sigDataLength = i;
 
-        // unhashed subpackets
+      // unhashed subpackets
+      i += subpackets.call(this, bytes.subarray(i, bytes.length), false);
+      this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
 
-        i += subpackets.call(_this, bytes.subarray(i, bytes.length), false);
-        _this.unhashedSubpackets = bytes.subarray(sigDataLength, i);
+      break;
+    default:
+      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
+  }
 
-        break;
-      default:
-        throw new Error('Version ' + _this.version + ' of the signature is unsupported.');
-    }
-
-    // Two-octet field holding left 16 bits of signed hash value.
-  })();
-
+  // Two-octet field holding left 16 bits of signed hash value.
   this.signedHashValue = bytes.subarray(i, i + 2);
   i += 2;
 
@@ -19421,6 +19801,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function (sessionKeyAlgorithm
 //   Helper functions   //
 //                      //
 //////////////////////////
+
 
 function aesEncrypt(algo, prefix, pt, key) {
   if (nodeCrypto) {
@@ -21104,12 +21485,11 @@ RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
  * @return {Promise}
  */
 function AsyncProxy() {
-  var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-  var _ref$path = _ref.path;
-  var path = _ref$path === undefined ? 'openpgp.worker.js' : _ref$path;
-  var worker = _ref.worker;
-  var config = _ref.config;
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      _ref$path = _ref.path,
+      path = _ref$path === undefined ? 'openpgp.worker.js' : _ref$path,
+      worker = _ref.worker,
+      config = _ref.config;
 
   this.worker = worker || new Worker(path);
   this.worker.onmessage = this.onMessage.bind(this);

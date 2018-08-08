@@ -347,12 +347,17 @@ SecretKey.prototype.generate = async function (bits, curve) {
  * Clear private params, return to initial state
  */
 SecretKey.prototype.clearPrivateParams = function () {
-  if (!this.encrypted) {
-    throw new Error('If secret key is not encrypted, clearing private params is irreversible.');
-  }
   const algo = enums.write(enums.publicKey, this.algorithm);
   this.params = this.params.slice(0, crypto.getPubKeyParamTypes(algo).length);
-  this.isEncrypted = true;
+  if (this.encrypted) {
+    this.isEncrypted = true;
+  } else {
+    if (this.tag === enums.packet.secretSubkey) {
+      this.tag = enums.packet.publicSubkey;
+    } else if (this.tag === enums.packet.secretKey) {
+      this.tag = enums.packet.publicKey;
+    }
+  }
 };
 
 /**

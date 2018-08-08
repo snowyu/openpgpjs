@@ -354,7 +354,7 @@ SecretKey.prototype.clearPrivateParams = function () {
   } else {
     if (this.tag === enums.packet.secretSubkey) {
       this.tag = enums.packet.publicSubkey;
-    } else {
+    } else if (this.tag === enums.packet.secretKey) {
       this.tag = enums.packet.publicKey;
     }
   }

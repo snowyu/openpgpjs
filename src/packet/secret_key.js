@@ -352,7 +352,11 @@ SecretKey.prototype.clearPrivateParams = function () {
   if (this.encrypted) {
     this.isEncrypted = true;
   } else {
-    this.tag = enums.packet.publicKey;
+    if (this.tag === enums.packet.secretSubkey) {
+      this.tag = enums.packet.publicSubkey;
+    } else {
+      this.tag = enums.packet.publicKey;
+    }
   }
 };
 

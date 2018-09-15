@@ -50510,7 +50510,7 @@ exports.default = {
   /**
    * Detect Node.js runtime.
    */
-  detectNode: new Function("return typeof global === 'object' && typeof process.versions === 'object' && typeof process.versions.node !== 'undefined';"),
+  detectNode: new Function("return typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node !== 'undefined';"),
 
   /**
    * Get native Node.js crypto api. The default configuration is to use

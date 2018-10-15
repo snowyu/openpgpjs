@@ -138,12 +138,14 @@ S2K.prototype.write = function () {
 /**
  * Produces a key using the specified passphrase and the defined
  * hashAlgorithm
- * @param {String} passphrase Passphrase containing user input
+ * @param {String|Uint8Array} passphrase Passphrase containing user input
  * @returns {Uint8Array} Produced key with a length corresponding to
  * hashAlgorithm hash length
  */
 S2K.prototype.produce_key = function (passphrase, numBytes) {
-  passphrase = util.str_to_Uint8Array(util.encode_utf8(passphrase));
+  if (typeof passphrase === 'string') {
+    passphrase = util.str_to_Uint8Array(util.encode_utf8(passphrase));
+  }
 
   function round(prefix, s2k) {
     const algorithm = enums.write(enums.hash, s2k.algorithm);
@@ -194,8 +196,10 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
     rlength += result.length;
     i++;
   }
+  const result = util.concatUint8Array(arr).subarray(0, numBytes);
+  util.cleanArray(arr);
 
-  return util.concatUint8Array(arr).subarray(0, numBytes);
+  return result;
 };
 
 S2K.fromClone = function (clone) {

@@ -274,7 +274,20 @@ export default {
     }
   },
 
+
   /**
+   * clear the value of the array
+   * @param {Array<TypedArray>|TypedArray} Array of Uint8Arrays to concatenate
+   * @returns {Uint8array} Concatenated array
+   */
+  cleanArray: function (arrays) {
+    if (util.isUint8Array(arrays)) {
+      arrays = [arrays];
+    }
+    arrays.forEach(arr => arr.fill(0));
+  },
+
+    /**
    * Concat Uint8arrays
    * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
    * @returns {Uint8array} Concatenated array

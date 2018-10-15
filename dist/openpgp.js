@@ -49882,12 +49882,14 @@ S2K.prototype.write = function () {
 /**
  * Produces a key using the specified passphrase and the defined
  * hashAlgorithm
- * @param {String} passphrase Passphrase containing user input
+ * @param {String|Uint8Array} passphrase Passphrase containing user input
  * @returns {Uint8Array} Produced key with a length corresponding to
  * hashAlgorithm hash length
  */
 S2K.prototype.produce_key = function (passphrase, numBytes) {
-  passphrase = _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(passphrase));
+  if (typeof passphrase === 'string') {
+    passphrase = _util2.default.str_to_Uint8Array(_util2.default.encode_utf8(passphrase));
+  }
 
   function round(prefix, s2k) {
     var algorithm = _enums2.default.write(_enums2.default.hash, s2k.algorithm);
@@ -49931,13 +49933,15 @@ S2K.prototype.produce_key = function (passphrase, numBytes) {
 
   var i = 0;
   while (rlength < numBytes) {
-    var result = round(prefix.subarray(0, i), this);
-    arr.push(result);
-    rlength += result.length;
+    var _result = round(prefix.subarray(0, i), this);
+    arr.push(_result);
+    rlength += _result.length;
     i++;
   }
+  var result = _util2.default.concatUint8Array(arr).subarray(0, numBytes);
+  _util2.default.cleanArray(arr);
 
-  return _util2.default.concatUint8Array(arr).subarray(0, numBytes);
+  return result;
 };
 
 S2K.fromClone = function (clone) {
@@ -50258,10 +50262,24 @@ exports.default = {
   },
 
   /**
-   * Concat Uint8arrays
-   * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
+   * clear the value of the array
+   * @param {Array<TypedArray>|TypedArray} Array of Uint8Arrays to concatenate
    * @returns {Uint8array} Concatenated array
    */
+  cleanArray: function cleanArray(arrays) {
+    if (_util2.default.isUint8Array(arrays)) {
+      arrays = [arrays];
+    }
+    arrays.forEach(function (arr) {
+      return arr.fill(0);
+    });
+  },
+
+  /**
+  * Concat Uint8arrays
+  * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
+  * @returns {Uint8array} Concatenated array
+  */
   concatUint8Array: function concatUint8Array(arrays) {
     var totalLength = 0;
     for (var i = 0; i < arrays.length; i++) {

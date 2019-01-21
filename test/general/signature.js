@@ -494,7 +494,7 @@ describe("Signature", function() {
 
   });
 
-  it('Verify signed message with two one pass signatures', function() {
+  it.only('Verify signed message with two one pass signatures', function() {
     const msg_armor =
       ['-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -525,7 +525,7 @@ describe("Signature", function() {
 
     expect(sMsg.getText()).to.equal(plaintext);
 
-    return sMsg.verify([pubKey2, pubKey3]).then(verifiedSig => {
+    return sMsg.verify([pubKey2, pubKey3], new Date('2018-11-25T10:58:29.000Z')).then(verifiedSig => {
       expect(verifiedSig).to.exist;
       expect(verifiedSig).to.have.length(2);
       expect(verifiedSig[0].valid).to.be.true;

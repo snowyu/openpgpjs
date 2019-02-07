@@ -721,12 +721,12 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
-Key.prototype.signPrimaryUser = async function(privateKeys) {
+Key.prototype.signPrimaryUser = async function(privateKeys, signatureType = enums.signature.cert_generic) {
   const { index, user } = await this.getPrimaryUser() || {};
   if (!user) {
     throw new Error('Could not find primary user');
   }
-  const userSign = await user.sign(this.keyPacket, privateKeys);
+  const userSign = await user.sign(this.keyPacket, privateKeys, signatureType);
   const key = new Key(this.toPacketlist());
   key.users[index] = userSign;
   return key;
@@ -738,11 +738,11 @@ Key.prototype.signPrimaryUser = async function(privateKeys) {
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
-Key.prototype.signAllUsers = async function(privateKeys) {
+Key.prototype.signAllUsers = async function(privateKeys, signatureType = enums.signature.cert_generic) {
   const that = this;
   const key = new Key(this.toPacketlist());
   key.users = await Promise.all(this.users.map(function(user) {
-    return user.sign(that.keyPacket, privateKeys);
+    return user.sign(that.keyPacket, privateKeys, signatureType);
   }));
   return key;
 };
@@ -888,7 +888,7 @@ Key.prototype.addSubkey = async function(subkey, options={}){
  * @class
  * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
  */
-function User(userPacket) {
+export function User(userPacket) {
   if (!(this instanceof User)) {
     return new User(userPacket);
   }
@@ -920,7 +920,7 @@ User.prototype.toPacketlist = function() {
  * @returns {Promise<module:key.Key>}             New user with new certificate signatures
  * @async
  */
-User.prototype.sign = async function(primaryKey, privateKeys) {
+User.prototype.sign = async function(primaryKey, privateKeys, signatureType = enums.signature.cert_generic) {
   const dataToSign = {
     userId: this.userId,
     userAttribute: this.userAttribute,
@@ -941,7 +941,7 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
     }
     return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
       // Most OpenPGP implementations use generic certification (0x10)
-      signatureType: enums.signature.cert_generic,
+      signatureType,
       keyFlags: [enums.keyFlags.certify_keys | enums.keyFlags.sign_data]
     });
   }));

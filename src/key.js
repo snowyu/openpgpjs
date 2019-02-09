@@ -899,6 +899,12 @@ export function User(userPacket) {
   this.revocationSignatures = [];
 }
 
+User.create = function(aUserId) {
+  const userIdPacket = new packet.Userid();
+  userIdPacket.format(aUserId);
+  return new User(userIdPacket);
+};
+
 /**
  * Transforms structured user data to packetlist
  * @returns {module:packet.List}

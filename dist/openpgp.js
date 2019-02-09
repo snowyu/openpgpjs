@@ -39788,6 +39788,12 @@ function User(userPacket) {
   this.revocationSignatures = [];
 }
 
+User.create = function (aUserId) {
+  var userIdPacket = new _packet2.default.Userid();
+  userIdPacket.format(aUserId);
+  return new User(userIdPacket);
+};
+
 /**
  * Transforms structured user data to packetlist
  * @returns {module:packet.List}

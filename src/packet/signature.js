@@ -307,7 +307,7 @@ Signature.prototype.write_all_sub_packets = function () {
     // MUST NOT be included in the signature.
     arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
-  if (this.notation !== null) {
+  if (this.notation != null) {
     Object.entries(this.notation).forEach(([name, value]) => {
       bytes = [new Uint8Array([0x80, 0, 0, 0])];
       // 2 octets of name length

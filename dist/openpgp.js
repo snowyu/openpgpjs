@@ -39339,9 +39339,7 @@ Key.prototype.applyRevocationCertificate = function () {
  * @async
  */
 Key.prototype.signPrimaryUser = function () {
-  var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(privateKeys) {
-    var signatureType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _enums2.default.signature.cert_generic;
-
+  var _ref24 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee21(privateKeys, signatureProps) {
     var _ref25, index, user, userSign, key;
 
     return _regenerator2.default.wrap(function _callee21$(_context21) {
@@ -39375,7 +39373,7 @@ Key.prototype.signPrimaryUser = function () {
 
           case 10:
             _context21.next = 12;
-            return user.sign(this.keyPacket, privateKeys, signatureType);
+            return user.sign(this.keyPacket, privateKeys, signatureProps);
 
           case 12:
             userSign = _context21.sent;
@@ -39392,7 +39390,7 @@ Key.prototype.signPrimaryUser = function () {
     }, _callee21, this);
   }));
 
-  return function (_x43) {
+  return function (_x43, _x44) {
     return _ref24.apply(this, arguments);
   };
 }();
@@ -39404,8 +39402,7 @@ Key.prototype.signPrimaryUser = function () {
  * @async
  */
 Key.prototype.signAllUsers = function () {
-  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(privateKeys) {
-    var signatureType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _enums2.default.signature.cert_generic;
+  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee22(privateKeys, signatureProps) {
     var that, key;
     return _regenerator2.default.wrap(function _callee22$(_context22) {
       while (1) {
@@ -39415,7 +39412,7 @@ Key.prototype.signAllUsers = function () {
             key = new Key(this.toPacketlist());
             _context22.next = 4;
             return _promise2.default.all(this.users.map(function (user) {
-              return user.sign(that.keyPacket, privateKeys, signatureType);
+              return user.sign(that.keyPacket, privateKeys, signatureProps);
             }));
 
           case 4:
@@ -39430,7 +39427,7 @@ Key.prototype.signAllUsers = function () {
     }, _callee22, this);
   }));
 
-  return function (_x45) {
+  return function (_x45, _x46) {
     return _ref26.apply(this, arguments);
   };
 }();
@@ -39817,7 +39814,7 @@ User.prototype.toPacketlist = function () {
  */
 User.prototype.sign = function () {
   var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee29(primaryKey, privateKeys) {
-    var signatureType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _enums2.default.signature.cert_generic;
+    var signatureProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var dataToSign, user;
     return _regenerator2.default.wrap(function _callee29$(_context29) {
       while (1) {
@@ -39828,8 +39825,13 @@ User.prototype.sign = function () {
               userAttribute: this.userAttribute,
               key: primaryKey
             };
+            // Most OpenPGP implementations use generic certification (0x10)
+
+            signatureProps.signatureType = signatureProps.signatureType || _enums2.default.signature.cert_generic;
+            signatureProps.notation = signatureProps.notation || this.notation;
+            signatureProps.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
             user = new User(dataToSign.userId || dataToSign.userAttribute);
-            _context29.next = 4;
+            _context29.next = 7;
             return _promise2.default.all(privateKeys.map(function () {
               var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(privateKey) {
                 var signingKey;
@@ -39867,11 +39869,7 @@ User.prototype.sign = function () {
                         throw new Error('Could not find valid signing key packet in key ' + privateKey.getKeyId().toHex());
 
                       case 9:
-                        return _context28.abrupt('return', createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
-                          // Most OpenPGP implementations use generic certification (0x10)
-                          signatureType: signatureType,
-                          keyFlags: [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data]
-                        }));
+                        return _context28.abrupt('return', createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, signatureProps));
 
                       case 10:
                       case 'end':
@@ -39886,15 +39884,15 @@ User.prototype.sign = function () {
               };
             }()));
 
-          case 4:
+          case 7:
             user.otherCertifications = _context29.sent;
-            _context29.next = 7;
+            _context29.next = 10;
             return user.update(this, primaryKey);
 
-          case 7:
+          case 10:
             return _context29.abrupt('return', user);
 
-          case 8:
+          case 11:
           case 'end':
             return _context29.stop();
         }
@@ -47250,7 +47248,7 @@ Signature.prototype.write_all_sub_packets = function () {
     // MUST NOT be included in the signature.
     arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
-  if (this.notation !== null) {
+  if (this.notation != null) {
     (0, _entries2.default)(this.notation).forEach(function (_ref2) {
       var _ref3 = (0, _slicedToArray3.default)(_ref2, 2),
           name = _ref3[0],

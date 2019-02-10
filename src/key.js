@@ -721,12 +721,12 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
-Key.prototype.signPrimaryUser = async function(privateKeys, signatureType = enums.signature.cert_generic) {
+Key.prototype.signPrimaryUser = async function(privateKeys, signatureProps) {
   const { index, user } = await this.getPrimaryUser() || {};
   if (!user) {
     throw new Error('Could not find primary user');
   }
-  const userSign = await user.sign(this.keyPacket, privateKeys, signatureType);
+  const userSign = await user.sign(this.keyPacket, privateKeys, signatureProps);
   const key = new Key(this.toPacketlist());
   key.users[index] = userSign;
   return key;
@@ -738,11 +738,11 @@ Key.prototype.signPrimaryUser = async function(privateKeys, signatureType = enum
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
-Key.prototype.signAllUsers = async function(privateKeys, signatureType = enums.signature.cert_generic) {
+Key.prototype.signAllUsers = async function(privateKeys, signatureProps) {
   const that = this;
   const key = new Key(this.toPacketlist());
   key.users = await Promise.all(this.users.map(function(user) {
-    return user.sign(that.keyPacket, privateKeys, signatureType);
+    return user.sign(that.keyPacket, privateKeys, signatureProps);
   }));
   return key;
 };
@@ -926,12 +926,16 @@ User.prototype.toPacketlist = function() {
  * @returns {Promise<module:key.Key>}             New user with new certificate signatures
  * @async
  */
-User.prototype.sign = async function(primaryKey, privateKeys, signatureType = enums.signature.cert_generic) {
+User.prototype.sign = async function(primaryKey, privateKeys, signatureProps = {}) {
   const dataToSign = {
     userId: this.userId,
     userAttribute: this.userAttribute,
     key: primaryKey
   };
+  // Most OpenPGP implementations use generic certification (0x10)
+  signatureProps.signatureType = signatureProps.signatureType || enums.signature.cert_generic;
+  signatureProps.notation = signatureProps.notation || this.notation;
+  signatureProps.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
   const user = new User(dataToSign.userId || dataToSign.userAttribute);
   user.otherCertifications = await Promise.all(privateKeys.map(async function(privateKey) {
     if (privateKey.isPublic()) {
@@ -945,11 +949,7 @@ User.prototype.sign = async function(primaryKey, privateKeys, signatureType = en
       throw new Error('Could not find valid signing key packet in key ' +
                       privateKey.getKeyId().toHex());
     }
-    return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
-      // Most OpenPGP implementations use generic certification (0x10)
-      signatureType,
-      keyFlags: [enums.keyFlags.certify_keys | enums.keyFlags.sign_data]
-    });
+    return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, signatureProps);
   }));
   await user.update(this, primaryKey);
   return user;

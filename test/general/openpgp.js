@@ -1563,6 +1563,115 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should sign and verify msg with additional notation', function () {
+          const notation = {
+            note: 'test notation',
+            te: 'notat 2'
+          }
+          const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
+          const signOpt = {
+            data,
+            privateKeys: privateKey.keys,
+            notation: notation
+          };
+          const verifyOpt = {
+            publicKeys: publicKey.keys
+          };
+          return openpgp.sign(signOpt).then(function (signed) {
+            expect(signed.data).to.match(/-----BEGIN PGP MESSAGE-----/);
+            const msg = verifyOpt.message = openpgp.message.readArmored(signed.data);
+            // console.log(msg.packets);
+            const signatures = msg.packets.filterByTag(openpgp.enums.packet.signature);
+            expect(signatures).is.not.empty;
+            signatures.forEach(sig => {
+              expect(sig.notation).to.deep.equal(notation);
+            })
+            // console.log(signatures[0].notation)
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            const signatures = verified.signatures;
+            // expect(sig.notation).to.deep.equal(notation);
+            expect(verified.data).to.deep.equal(data);
+            expect(signatures[0].valid).to.be.true;
+            const signingKey = await privateKey.keys[0].getSigningKey();
+            expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(signatures[0].signature.packets.length).to.equal(1);
+            expect(signatures[0].signature.packets[0].notation).to.deep.equal(notation);
+            verifyOpt.notation= {notation: 'is not exists'};
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            expect('should not be here').to.be.equal('');
+          }).catch(err => {
+            expect(err.message).to.be.include('can\'t verify notation');
+          });
+        });
+
+        it('should sign and verify cleartext with additional notation', function () {
+          const notation = {
+            note: 'test notation',
+            te: 'notat 2'
+          }
+          const signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys,
+            notation: notation
+          };
+          const verifyOpt = {
+            publicKeys: publicKey.keys
+          };
+          return openpgp.sign(signOpt).then(function (signed) {
+            expect(signed.data).to.match(/-----BEGIN PGP SIGNED MESSAGE-----/);
+            const msg = verifyOpt.message = openpgp.cleartext.readArmored(signed.data);
+            // const signatures = msg.packets.filterByTag(openpgp.enums.packet.signature); //Message
+            const signatures = msg.signature.packets; //cleartext
+            expect(signatures).is.not.empty;
+            signatures.forEach(sig => {
+              expect(sig.notation).to.deep.equal(notation);
+            })
+            // console.log(signatures[0].notation)
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            const signatures = verified.signatures;
+            // expect(sig.notation).to.deep.equal(notation);
+            expect(verified.data).to.equal(plaintext);
+            expect(signatures[0].valid).to.be.true;
+            const signingKey = await privateKey.keys[0].getSigningKey();
+            expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(signatures[0].signature.packets.length).to.equal(1);
+            expect(signatures[0].signature.packets[0].notation).to.deep.equal(notation);
+          });
+        });
+
+        it('should sign and verify cleartext with additional notation in detached signatures', function () {
+          const notation = {
+            note: 'test notation',
+            te: 'notat 2'
+          }
+          const signOpt = {
+            data: plaintext,
+            privateKeys: privateKey.keys,
+            notation: notation,
+            detached: true
+          };
+          const verifyOpt = {
+            publicKeys: publicKey.keys
+          };
+          return openpgp.sign(signOpt).then(function (signed) {
+            verifyOpt.message = new openpgp.cleartext.CleartextMessage(plaintext);
+            const signature = verifyOpt.signature = openpgp.signature.readArmored(signed.signature);
+            expect(signature.packets[0].notation).to.deep.equal(notation);
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            const signatures = verified.signatures;
+            expect(verified.data).to.equal(plaintext);
+            expect(signatures[0].valid).to.be.true;
+            const signingKey = await privateKey.keys[0].getSigningKey();
+            expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(signatures[0].signature.packets.length).to.equal(1);
+            expect(signatures[0].signature.packets[0].notation).to.deep.equal(notation);
+          });
+        });
+
         it('should sign and verify cleartext data', function () {
           const signOpt = {
             data: plaintext,

@@ -394,25 +394,28 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @async
  * @static
  */
-export function sign({ data, dataType, privateKeys, armor=true, detached=false, date=new Date(), fromUserId={}, signatureExpirationTime=0 }) {
+export function sign(opts) {
+  const { data, dataType, armor=true, detached=false, date=new Date(), fromUserId={} } = opts;
   checkData(data);
-  privateKeys = toArray(privateKeys);
+  const privateKeys = toArray(opts.privateKeys);
+  // const opts = arguments[0];
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('sign', {
-      data, dataType, privateKeys, armor, detached, date, fromUserId
-    });
+    return asyncProxy.delegate('sign', opts);
   }
 
   const result = {};
   return Promise.resolve().then(async function() {
     let message = util.isString(data) ? new CleartextMessage(data) : messageLib.fromBinary(data, dataType, date);
+    opts.userId = fromUserId;
+    // opts.date = date;
+    // opts.signatureExpirationTime = signatureExpirationTime;
 
     if (detached) {
-      const signature = await message.signDetachedEx(privateKeys, {date, userId:fromUserId, signatureExpirationTime});
+      const signature = await message.signDetachedEx(privateKeys, opts);
       result.signature = armor ? signature.armor() : signature;
     } else {
-      message = await message.signEx(privateKeys, {date, userId:fromUserId, signatureExpirationTime});
+      message = await message.signEx(privateKeys, opts);
       if (armor) {
         result.data = message.armor();
       } else {
@@ -434,17 +437,30 @@ export function sign({ data, dataType, privateKeys, armor=true, detached=false, 
  * @async
  * @static
  */
-export function verify({ message, publicKeys, signature=null, date=new Date() }) {
+export function verify({ message, publicKeys, signature=null, date=new Date(), notation }) {
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('verify', { message, publicKeys, signature, date });
+    return asyncProxy.delegate('verify', { message, publicKeys, signature, date, notation });
   }
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
+    const isText = message instanceof CleartextMessage;
+    result.data = isText ? message.getText() : message.getLiteralData();
+    if (notation) {
+      const vKeys = Object.keys(notation);
+      if (vKeys.length) {
+        const vSignPack = signature ? signature.packets[0] : isText ? message.signature.packets : message.packets.filterByTag(enums.packet.signature)[0];
+        if (!vSignPack.notation) throw new Error('can\'t verify notation: nothing in signature');
+        vKeys.forEach(key => {
+          if (notation[key] !== vSignPack.notation[key]) {
+            throw new Error(`can't verify notation: the "${key}" is miss match`);
+          }
+        });
+      }
+    }
     result.signatures = signature ?
       await message.verifyDetached(signature, publicKeys, date) :
       await message.verify(publicKeys, date);

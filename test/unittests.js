@@ -31,7 +31,7 @@ if (typeof Promise === 'undefined') {
 };
 
 describe('Unit Tests', function () {
-
+  this.timeout(120000);
   if (typeof window !== 'undefined') {
     afterEach(function () {
       if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100) {

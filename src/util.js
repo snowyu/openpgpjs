@@ -371,6 +371,20 @@ export default {
   },
 
   /**
+   * Calculates a 16bit sum of a Uint8Array by adding each character
+   * codes modulus 65535
+   * @param {Uint8Array} Uint8Array to create a sum of
+   * @returns {Uint8Array} 2 bytes containing the sum of all charcodes % 65535
+   */
+  write_checksum: function (text) {
+    let s = 0;
+    for (let i = 0; i < text.length; i++) {
+      s = (s + text[i]) & 0xFFFF;
+    }
+    return util.writeNumber(s, 2);
+  },
+
+  /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
@@ -543,16 +557,32 @@ export default {
   detectNode: new Function("return typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node !== 'undefined';"),
 
   /**
+   * Get native Node.js module
+   * @param {String}     The module to require
+   * @returns {Object}   The required module or 'undefined'
+   */
+  nodeRequire: function(module) {
+    if (!util.detectNode()) {
+      return;
+    }
+
+    // Requiring the module dynamically allows us to access the native node module.
+    // otherwise, it gets replaced with the browserified version
+    // eslint-disable-next-line import/no-dynamic-require
+    return require(module);
+  },
+
+  /**
    * Get native Node.js crypto api. The default configuration is to use
    * the api when available. But it can also be deactivated with config.use_native
    * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!util.detectNode() || !config.use_native) {
+    if (!config.use_native) {
       return;
     }
 
-    return require('crypto');
+    return util.nodeRequire('crypto');
   },
 
   /**
@@ -568,15 +598,24 @@ export default {
     // This "hack" allows us to access the native node buffer module.
     // otherwise, it gets replaced with the browserified version
     // eslint-disable-next-line no-useless-concat, import/no-dynamic-require
-    return require('buf'+'fer').Buffer;
+    return (util.nodeRequire('buffer') || {}).Buffer;
   },
 
   getNodeZlib: function() {
-    if (!util.detectNode() || !config.use_native) {
+    if (!config.use_native) {
       return;
     }
 
-    return require('zlib');
+    return util.nodeRequire('zlib');
+  },
+
+  getHardwareConcurrency: function() {
+    if (util.detectNode()) {
+      const os = util.nodeRequire('os');
+      return os.cpus().length;
+    }
+
+    return navigator.hardwareConcurrency || 1;
   },
 
   isEmailAddress: function(data) {
@@ -591,11 +630,23 @@ export default {
    * Format user id for internal use.
    */
   formatUserId: function(id) {
-    // name and email address can be empty but must be of the correct type
-    if ((id.name && !util.isString(id.name)) || (id.email && !util.isEmailAddress(id.email))) {
+    // name, email address and comment can be empty but must be of the correct type
+    if ((id.name && !util.isString(id.name)) ||
+        (id.email && !util.isEmailAddress(id.email)) ||
+        (id.comment && !util.isString(id.comment))) {
       throw new Error('Invalid user id format');
     }
-    return new rfc2822.Address(id.name, id.email, id.comment).format();
+    const components = [];
+    if (id.name) {
+      components.push(id.name);
+    }
+    if (id.email) {
+      components.push(`<${id.email}>`);
+    }
+    if (id.comment) {
+      components.push(`(${id.comment})`);
+    }
+    return components.join(' ');
   },
 
   /**

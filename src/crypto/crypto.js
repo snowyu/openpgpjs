@@ -31,6 +31,7 @@
  * @module crypto/crypto
  */
 
+import BN from 'bn.js';
 import publicKey from './public_key';
 import cipher from './cipher';
 import random from './random';
@@ -87,9 +88,9 @@ export default {
           const oid = pub_params[0];
           const Q = pub_params[1].toUint8Array();
           const kdf_params = pub_params[2];
-          const res = await publicKey.elliptic.ecdh.encrypt(
+          const { publicKey: V, wrappedKey: C } = await publicKey.elliptic.ecdh.encrypt(
             oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
-          return constructParams(types, [res.V, res.C]);
+          return constructParams(types, [new BN(V), C]);
         }
         default:
           return [];
@@ -137,9 +138,10 @@ export default {
           const kdf_params = key_params[2];
           const V = data_params[0].toUint8Array();
           const C = data_params[1].data;
+          const Q = key_params[1].toUint8Array();
           const d = key_params[3].toUint8Array();
           return publicKey.elliptic.ecdh.decrypt(
-            oid, kdf_params.cipher, kdf_params.hash, V, C, d, fingerprint);
+            oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint);
         }
         default:
           throw new Error('Invalid public key encryption algorithm.');

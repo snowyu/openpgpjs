@@ -137,7 +137,7 @@ module.exports = {
     "newline-per-chained-call": "off",
     "no-alert": "error",
     "no-array-constructor": "error",
-    "no-await-in-loop": "error",
+    "no-await-in-loop": 0,
     "no-bitwise": "off",
     "no-buffer-constructor": "error",
     "no-caller": "error",

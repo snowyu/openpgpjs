@@ -147,6 +147,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys) 
 Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
   let keyPackets = [];
 
+  let exception;
   if (passwords) {
     const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
     if (!symESKeyPacketlist) {
@@ -184,6 +185,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           keyPackets.push(keyPacket);
         } catch (err) {
           util.print_debug_error(err);
+          exception = err;
         }
       }));
     }));
@@ -207,7 +209,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
 
     return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
   }
-  throw new Error('Session key decryption failed.');
+  throw exception || new Error('Session key decryption failed.');
 };
 
 /**

@@ -56,8 +56,8 @@ module.exports = function(grunt) {
           transform: [
             ["babelify", {
               global: true,
-              // Only babelify asmcrypto in node_modules
-              only: /^(?:.*\/node_modules\/asmcrypto\.js\/|(?!.*\/node_modules\/)).*$/,
+              // Only babelify web-streams-polyfill, web-stream-tools, asmcrypto, email-addresses and seek-bzip in node_modules
+              only: /^(?:.*\/node_modules\/@mattiasbuelens\/web-streams-polyfill\/|.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/email-addresses\/|.*\/node_modules\/seek-bzip\/|(?!.*\/node_modules\/)).*$/,
               plugins: ["transform-async-to-generator",
                         "syntax-async-functions",
                         "transform-regenerator",

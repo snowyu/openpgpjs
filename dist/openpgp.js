@@ -33672,7 +33672,7 @@ function verifyHeaders(headers, packetlist) {
   }
 }
 
-},{"./encoding/armor":365,"./enums":367,"./message":374,"./packet":379,"./signature":399,"./util":406,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],331:[function(_dereq_,module,exports){
+},{"./encoding/armor":366,"./enums":368,"./message":375,"./packet":380,"./signature":400,"./util":407,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],331:[function(_dereq_,module,exports){
 (function (process){
 "use strict";
 
@@ -34530,7 +34530,7 @@ exports.default = {
  * @requires enums
  */
 
-},{"../enums":367}],333:[function(_dereq_,module,exports){
+},{"../enums":368}],333:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34718,7 +34718,7 @@ exports.default = {
   unwrap: unwrap
 };
 
-},{"../util":406,"./cipher":340}],335:[function(_dereq_,module,exports){
+},{"../util":407,"./cipher":340}],335:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36721,7 +36721,7 @@ exports.default = function () {
 }();
 
 }).call(this,_dereq_("buffer").Buffer)
-},{"../util":406,"asmcrypto.js/src/aes/cbc/exports":5,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"buffer":49}],343:[function(_dereq_,module,exports){
+},{"../util":407,"asmcrypto.js/src/aes/cbc/exports":5,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"buffer":49}],343:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37165,7 +37165,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":367,"../type/ecdh_symkey":400,"../type/kdf_params":401,"../type/mpi":403,"../type/oid":404,"./cipher":340,"./public_key":360,"./random":363,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],344:[function(_dereq_,module,exports){
+},{"../enums":368,"../type/ecdh_symkey":401,"../type/kdf_params":402,"../type/mpi":404,"../type/oid":405,"./cipher":340,"./public_key":361,"./random":364,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],344:[function(_dereq_,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -37572,7 +37572,7 @@ EAX.tagLength = tagLength;
 exports.default = EAX;
 
 }).call(this,_dereq_("buffer").Buffer)
-},{"../util":406,"./cmac":342,"asmcrypto.js/src/aes/ctr/exports":9,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"buffer":49}],345:[function(_dereq_,module,exports){
+},{"../util":407,"./cmac":342,"asmcrypto.js/src/aes/ctr/exports":9,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"buffer":49}],345:[function(_dereq_,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -37901,7 +37901,7 @@ GCM.tagLength = tagLength;
 exports.default = GCM;
 
 }).call(this,_dereq_("buffer").Buffer)
-},{"../util":406,"asmcrypto.js/src/aes/gcm/exports":12,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"buffer":49}],346:[function(_dereq_,module,exports){
+},{"../util":407,"asmcrypto.js/src/aes/gcm/exports":12,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"buffer":49}],346:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38080,7 +38080,7 @@ exports.default = {
   }
 };
 
-},{"../../util":406,"./md5":347,"asmcrypto.js/src/hash/sha256/exports":16,"hash.js/lib/hash/ripemd":294,"hash.js/lib/hash/sha/224":297,"hash.js/lib/hash/sha/384":299,"hash.js/lib/hash/sha/512":300,"rusha":327}],347:[function(_dereq_,module,exports){
+},{"../../util":407,"./md5":347,"asmcrypto.js/src/hash/sha256/exports":16,"hash.js/lib/hash/ripemd":294,"hash.js/lib/hash/sha/224":297,"hash.js/lib/hash/sha/384":299,"hash.js/lib/hash/sha/512":300,"rusha":327}],347:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38295,7 +38295,7 @@ function add32(a, b) {
 
 exports.default = md5;
 
-},{"../../util":406}],348:[function(_dereq_,module,exports){
+},{"../../util":407}],348:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38402,7 +38402,7 @@ var mod = {
 
 exports.default = mod;
 
-},{"./aes_kw":334,"./cfb":335,"./cipher":340,"./crypto":343,"./eax":344,"./gcm":345,"./hash":346,"./ocb":349,"./pkcs1":350,"./pkcs5":351,"./public_key":360,"./random":363,"./signature":364,"babel-runtime/core-js/object/assign":24}],349:[function(_dereq_,module,exports){
+},{"./aes_kw":334,"./cfb":335,"./cipher":340,"./crypto":343,"./eax":344,"./gcm":345,"./hash":346,"./ocb":349,"./pkcs1":350,"./pkcs5":351,"./public_key":361,"./random":364,"./signature":365,"babel-runtime/core-js/object/assign":24}],349:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38764,7 +38764,7 @@ OCB.tagLength = tagLength;
 
 exports.default = OCB;
 
-},{"../util":406,"./cipher":340,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],350:[function(_dereq_,module,exports){
+},{"../util":407,"./cipher":340,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],350:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39004,7 +39004,7 @@ emsa.encode = function (algo, M, emLen) {
 
 exports.default = { eme: eme, emsa: emsa };
 
-},{"../util":406,"./hash":346,"./random":363,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],351:[function(_dereq_,module,exports){
+},{"../util":407,"./hash":346,"./random":364,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],351:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39299,7 +39299,7 @@ exports.default = {
   }()
 };
 
-},{"../../util":406,"../hash":346,"../random":363,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],353:[function(_dereq_,module,exports){
+},{"../../util":407,"../hash":346,"../random":364,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],353:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39435,7 +39435,80 @@ exports.default = {
   }()
 };
 
-},{"../random":363,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],354:[function(_dereq_,module,exports){
+},{"../random":364,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],354:[function(_dereq_,module,exports){
+'use strict';
+
+var _defineProperty = _dereq_('babel-runtime/core-js/object/define-property');
+
+var _defineProperty2 = _interopRequireDefault(_defineProperty);
+
+var _hash = _dereq_('hash.js');
+
+var _hash2 = _interopRequireDefault(_hash);
+
+var _elliptic = _dereq_('elliptic');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// const hash = require('hash.js');
+var PresetCurve = _elliptic.curves.PresetCurve;
+
+function defineCurve(name, options) {
+  (0, _defineProperty2.default)(_elliptic.curves, name, {
+    configurable: true,
+    enumerable: true,
+    get: function get() {
+      var curve = new PresetCurve(options);
+      (0, _defineProperty2.default)(_elliptic.curves, name, {
+        configurable: true,
+        enumerable: true,
+        value: curve
+      });
+      return curve;
+    }
+  });
+}
+
+// https://tools.ietf.org/html/rfc5639#section-3.4
+defineCurve('brainpoolP256r1', {
+  type: 'short',
+  prime: null,
+  p: 'A9FB57DB A1EEA9BC 3E660A90 9D838D72 6E3BF623 D5262028 2013481D 1F6E5377',
+  a: '7D5A0975 FC2C3057 EEF67530 417AFFE7 FB8055C1 26DC5C6C E94A4B44 F330B5D9',
+  b: '26DC5C6C E94A4B44 F330B5D9 BBD77CBF 95841629 5CF7E1CE 6BCCDC18 FF8C07B6',
+  n: 'A9FB57DB A1EEA9BC 3E660A90 9D838D71 8C397AA3 B561A6F7 901E0E82 974856A7',
+  hash: _hash2.default.sha256, // or 384, or 512
+  gRed: false,
+  g: ['8BD2AEB9CB7E57CB2C4B482FFC81B7AFB9DE27E1E3BD23C23A4453BD9ACE3262', '547EF835C3DAC4FD97F8461A14611DC9C27745132DED8E545C1D54C72F046997']
+});
+
+// https://tools.ietf.org/html/rfc5639#section-3.6
+defineCurve('brainpoolP384r1', {
+  type: 'short',
+  prime: null,
+  p: '8CB91E82 A3386D28 0F5D6F7E 50E641DF 152F7109 ED5456B4 12B1DA19 7FB71123' + 'ACD3A729 901D1A71 87470013 3107EC53',
+  a: '7BC382C6 3D8C150C 3C72080A CE05AFA0 C2BEA28E 4FB22787 139165EF BA91F90F' + '8AA5814A 503AD4EB 04A8C7DD 22CE2826',
+  b: '04A8C7DD 22CE2826 8B39B554 16F0447C 2FB77DE1 07DCD2A6 2E880EA5 3EEB62D5' + '7CB43902 95DBC994 3AB78696 FA504C11',
+  n: '8CB91E82 A3386D28 0F5D6F7E 50E641DF 152F7109 ED5456B3 1F166E6C AC0425A7' + 'CF3AB6AF 6B7FC310 3B883202 E9046565',
+  hash: _hash2.default.sha384, // or 512
+  gRed: false,
+  g: ['1D1C64F068CF45FFA2A63A81B7C13F6B8847A3E77EF14FE3DB7FCAFE0CBD10' + 'E8E826E03436D646AAEF87B2E247D4AF1E', '8ABE1D7520F9C2A45CB1EB8E95CFD55262B70B29FEEC5864E19C054FF99129' + '280E4646217791811142820341263C5315']
+});
+
+// https://tools.ietf.org/html/rfc5639#section-3.7
+defineCurve('brainpoolP512r1', {
+  type: 'short',
+  prime: null,
+  p: 'AADD9DB8 DBE9C48B 3FD4E6AE 33C9FC07 CB308DB3 B3C9D20E D6639CCA 70330871' + '7D4D9B00 9BC66842 AECDA12A E6A380E6 2881FF2F 2D82C685 28AA6056 583A48F3',
+  a: '7830A331 8B603B89 E2327145 AC234CC5 94CBDD8D 3DF91610 A83441CA EA9863BC' + '2DED5D5A A8253AA1 0A2EF1C9 8B9AC8B5 7F1117A7 2BF2C7B9 E7C1AC4D 77FC94CA',
+  b: '3DF91610 A83441CA EA9863BC 2DED5D5A A8253AA1 0A2EF1C9 8B9AC8B5 7F1117A7' + '2BF2C7B9 E7C1AC4D 77FC94CA DC083E67 984050B7 5EBAE5DD 2809BD63 8016F723',
+  n: 'AADD9DB8 DBE9C48B 3FD4E6AE 33C9FC07 CB308DB3 B3C9D20E D6639CCA 70330870' + '553E5C41 4CA92619 41866119 7FAC1047 1DB1D381 085DDADD B5879682 9CA90069',
+  hash: _hash2.default.sha512,
+  gRed: false,
+  g: ['81AEE4BDD82ED9645A21322E9C4C6A9385ED9F70B5D916C1B43B62EEF4D009' + '8EFF3B1F78E2D0D48D50D1687B93B97D5F7C6D5047406A5E688B352209BCB9F822', '7DDE385D566332ECC0EABFA9CF7822FDF209F70024A57B1AA000C55B881F81' + '11B2DCDE494A5F485E5BCA4BD88A2763AED1CA2B2FA8F0540678CD1E0F3AD80892']
+});
+
+},{"babel-runtime/core-js/object/define-property":26,"elliptic":274,"hash.js":291}],355:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39864,7 +39937,7 @@ exports.nodeCurves = nodeCurves;
 exports.generate = generate;
 exports.getPreferredHashAlgo = getPreferredHashAlgo;
 
-},{"../../../enums":367,"../../../type/oid":404,"../../../util":406,"../../random":363,"./key":359,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46,"elliptic":274}],355:[function(_dereq_,module,exports){
+},{"../../../enums":368,"../../../type/oid":405,"../../../util":407,"../../random":364,"./key":360,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46,"elliptic":274}],356:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40637,7 +40710,7 @@ function jwkToRawPublic(jwk) {
 
 exports.default = { encrypt: encrypt, decrypt: decrypt, genPublicEphemeralKey: genPublicEphemeralKey, genPrivateEphemeralKey: genPrivateEphemeralKey, buildEcdhParam: buildEcdhParam, kdf: kdf, webPublicEphemeralKey: webPublicEphemeralKey, webPrivateEphemeralKey: webPrivateEphemeralKey, ellipticPublicEphemeralKey: ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey: ellipticPrivateEphemeralKey, nodePublicEphemeralKey: nodePublicEphemeralKey, nodePrivateEphemeralKey: nodePrivateEphemeralKey };
 
-},{"../../../enums":367,"../../../type/kdf_params":401,"../../../util":406,"../../aes_kw":334,"../../cipher":340,"../../hash":346,"./curves":354,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"bn.js":46,"tweetnacl/nacl-fast-light.js":328}],356:[function(_dereq_,module,exports){
+},{"../../../enums":368,"../../../type/kdf_params":402,"../../../util":407,"../../aes_kw":334,"../../cipher":340,"../../hash":346,"./curves":355,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"bn.js":46,"tweetnacl/nacl-fast-light.js":328}],357:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40758,7 +40831,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = { sign: sign, verify: verify };
 
-},{"./curves":354,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],357:[function(_dereq_,module,exports){
+},{"./curves":355,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],358:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40879,12 +40952,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = { sign: sign, verify: verify };
 
-},{"./curves":354,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],358:[function(_dereq_,module,exports){
+},{"./curves":355,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],359:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+_dereq_('./curves-ex');
 
 var _curves = _dereq_('./curves');
 
@@ -40904,7 +40979,9 @@ var _ecdh2 = _interopRequireDefault(_ecdh);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// OpenPGP.js - An OpenPGP implementation in javascript
+exports.default = {
+  Curve: _curves2.default, ecdh: _ecdh2.default, ecdsa: _ecdsa2.default, eddsa: _eddsa2.default, generate: _curves.generate, getPreferredHashAlgo: _curves.getPreferredHashAlgo
+}; // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015-2016 Decentral
 //
 // This library is free software; you can redistribute it and/or
@@ -40930,11 +41007,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @module crypto/public_key/elliptic
  */
 
-exports.default = {
-  Curve: _curves2.default, ecdh: _ecdh2.default, ecdsa: _ecdsa2.default, eddsa: _eddsa2.default, generate: _curves.generate, getPreferredHashAlgo: _curves.getPreferredHashAlgo
-};
-
-},{"./curves":354,"./ecdh":355,"./ecdsa":356,"./eddsa":357}],359:[function(_dereq_,module,exports){
+},{"./curves":355,"./curves-ex":354,"./ecdh":356,"./ecdsa":357,"./eddsa":358}],360:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41350,7 +41423,7 @@ var SubjectPublicKeyInfo = nodeCrypto ? asn1.define('SubjectPublicKeyInfo', func
   this.seq().obj(this.key('algorithm').use(AlgorithmIdentifier), this.key('subjectPublicKey').bitstr());
 }) : undefined;
 
-},{"../../../enums":367,"../../../util":406,"../../hash":346,"./curves":354,"asn1.js":"asn1.js","babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],360:[function(_dereq_,module,exports){
+},{"../../../enums":368,"../../../util":407,"../../hash":346,"./curves":355,"asn1.js":"asn1.js","babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],361:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41395,7 +41468,7 @@ exports.default = {
   dsa: _dsa2.default
 };
 
-},{"./dsa":352,"./elgamal":353,"./elliptic":358,"./rsa":362}],361:[function(_dereq_,module,exports){
+},{"./dsa":352,"./elgamal":353,"./elliptic":359,"./rsa":363}],362:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41765,7 +41838,7 @@ function divisionTest(n) {
 // https://github.com/gpg/libgcrypt/blob/master/cipher/primegen.c
 var small_primes = [7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997, 1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061, 1063, 1069, 1087, 1091, 1093, 1097, 1103, 1109, 1117, 1123, 1129, 1151, 1153, 1163, 1171, 1181, 1187, 1193, 1201, 1213, 1217, 1223, 1229, 1231, 1237, 1249, 1259, 1277, 1279, 1283, 1289, 1291, 1297, 1301, 1303, 1307, 1319, 1321, 1327, 1361, 1367, 1373, 1381, 1399, 1409, 1423, 1427, 1429, 1433, 1439, 1447, 1451, 1453, 1459, 1471, 1481, 1483, 1487, 1489, 1493, 1499, 1511, 1523, 1531, 1543, 1549, 1553, 1559, 1567, 1571, 1579, 1583, 1597, 1601, 1607, 1609, 1613, 1619, 1621, 1627, 1637, 1657, 1663, 1667, 1669, 1693, 1697, 1699, 1709, 1721, 1723, 1733, 1741, 1747, 1753, 1759, 1777, 1783, 1787, 1789, 1801, 1811, 1823, 1831, 1847, 1861, 1867, 1871, 1873, 1877, 1879, 1889, 1901, 1907, 1913, 1931, 1933, 1949, 1951, 1973, 1979, 1987, 1993, 1997, 1999, 2003, 2011, 2017, 2027, 2029, 2039, 2053, 2063, 2069, 2081, 2083, 2087, 2089, 2099, 2111, 2113, 2129, 2131, 2137, 2141, 2143, 2153, 2161, 2179, 2203, 2207, 2213, 2221, 2237, 2239, 2243, 2251, 2267, 2269, 2273, 2281, 2287, 2293, 2297, 2309, 2311, 2333, 2339, 2341, 2347, 2351, 2357, 2371, 2377, 2381, 2383, 2389, 2393, 2399, 2411, 2417, 2423, 2437, 2441, 2447, 2459, 2467, 2473, 2477, 2503, 2521, 2531, 2539, 2543, 2549, 2551, 2557, 2579, 2591, 2593, 2609, 2617, 2621, 2633, 2647, 2657, 2659, 2663, 2671, 2677, 2683, 2687, 2689, 2693, 2699, 2707, 2711, 2713, 2719, 2729, 2731, 2741, 2749, 2753, 2767, 2777, 2789, 2791, 2797, 2801, 2803, 2819, 2833, 2837, 2843, 2851, 2857, 2861, 2879, 2887, 2897, 2903, 2909, 2917, 2927, 2939, 2953, 2957, 2963, 2969, 2971, 2999, 3001, 3011, 3019, 3023, 3037, 3041, 3049, 3061, 3067, 3079, 3083, 3089, 3109, 3119, 3121, 3137, 3163, 3167, 3169, 3181, 3187, 3191, 3203, 3209, 3217, 3221, 3229, 3251, 3253, 3257, 3259, 3271, 3299, 3301, 3307, 3313, 3319, 3323, 3329, 3331, 3343, 3347, 3359, 3361, 3371, 3373, 3389, 3391, 3407, 3413, 3433, 3449, 3457, 3461, 3463, 3467, 3469, 3491, 3499, 3511, 3517, 3527, 3529, 3533, 3539, 3541, 3547, 3557, 3559, 3571, 3581, 3583, 3593, 3607, 3613, 3617, 3623, 3631, 3637, 3643, 3659, 3671, 3673, 3677, 3691, 3697, 3701, 3709, 3719, 3727, 3733, 3739, 3761, 3767, 3769, 3779, 3793, 3797, 3803, 3821, 3823, 3833, 3847, 3851, 3853, 3863, 3877, 3881, 3889, 3907, 3911, 3917, 3919, 3923, 3929, 3931, 3943, 3947, 3967, 3989, 4001, 4003, 4007, 4013, 4019, 4021, 4027, 4049, 4051, 4057, 4073, 4079, 4091, 4093, 4099, 4111, 4127, 4129, 4133, 4139, 4153, 4157, 4159, 4177, 4201, 4211, 4217, 4219, 4229, 4231, 4241, 4243, 4253, 4259, 4261, 4271, 4273, 4283, 4289, 4297, 4327, 4337, 4339, 4349, 4357, 4363, 4373, 4391, 4397, 4409, 4421, 4423, 4441, 4447, 4451, 4457, 4463, 4481, 4483, 4493, 4507, 4513, 4517, 4519, 4523, 4547, 4549, 4561, 4567, 4583, 4591, 4597, 4603, 4621, 4637, 4639, 4643, 4649, 4651, 4657, 4663, 4673, 4679, 4691, 4703, 4721, 4723, 4729, 4733, 4751, 4759, 4783, 4787, 4789, 4793, 4799, 4801, 4813, 4817, 4831, 4861, 4871, 4877, 4889, 4903, 4909, 4919, 4931, 4933, 4937, 4943, 4951, 4957, 4967, 4969, 4973, 4987, 4993, 4999];
 
-},{"../random":363,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],362:[function(_dereq_,module,exports){
+},{"../random":364,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],363:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42213,7 +42286,7 @@ exports.default = {
   prime: _prime2.default
 };
 
-},{"../../config":333,"../../util":406,"../random":363,"./prime":361,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],363:[function(_dereq_,module,exports){
+},{"../../config":333,"../../util":407,"../random":364,"./prime":362,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],364:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42514,7 +42587,7 @@ RandomBuffer.prototype.get = function () {
   };
 }();
 
-},{"../util":406,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/typeof":43,"babel-runtime/regenerator":44,"bn.js":46,"crypto":"crypto"}],364:[function(_dereq_,module,exports){
+},{"../util":407,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/typeof":43,"babel-runtime/regenerator":44,"bn.js":46,"crypto":"crypto"}],365:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42736,7 +42809,7 @@ exports.default = {
     * @module crypto/signature
    */
 
-},{"../enums":367,"../util":406,"./pkcs1":350,"./public_key":360,"babel-runtime/core-js/array/from":20,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],365:[function(_dereq_,module,exports){
+},{"../enums":368,"../util":407,"./pkcs1":350,"./public_key":361,"babel-runtime/core-js/array/from":20,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":46}],366:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -43122,7 +43195,7 @@ exports.default = {
   decode: dearmor
 };
 
-},{"../config":333,"../enums.js":367,"../util":406,"./base64.js":366}],366:[function(_dereq_,module,exports){
+},{"../config":333,"../enums.js":368,"../util":407,"./base64.js":367}],367:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -43249,7 +43322,7 @@ exports.default = {
   decode: r2s
 };
 
-},{}],367:[function(_dereq_,module,exports){
+},{}],368:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43766,7 +43839,7 @@ exports.default = {
 
 };
 
-},{"babel-runtime/core-js/object/entries":27,"babel-runtime/core-js/symbol":34,"babel-runtime/helpers/slicedToArray":41}],368:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/object/entries":27,"babel-runtime/core-js/symbol":34,"babel-runtime/helpers/slicedToArray":41}],369:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -43866,7 +43939,7 @@ HKP.prototype.upload = function (publicKeyArmored) {
 
 exports.default = HKP;
 
-},{"./config":333,"node-fetch":"node-fetch"}],369:[function(_dereq_,module,exports){
+},{"./config":333,"node-fetch":"node-fetch"}],370:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44171,7 +44244,7 @@ var cleartext = exports.cleartext = cleartextMod;
  * @name module:openpgp.util
  */
 
-},{"./cleartext":330,"./config/config":332,"./crypto":348,"./encoding/armor":365,"./enums":367,"./hkp":368,"./key":370,"./keyring":371,"./message":374,"./openpgp":375,"./packet":379,"./signature":399,"./type/ecdh_symkey":400,"./type/kdf_params":401,"./type/keyid":402,"./type/mpi":403,"./type/oid":404,"./type/s2k":405,"./util":406,"./wkd":407,"./worker/async_proxy":408}],370:[function(_dereq_,module,exports){
+},{"./cleartext":330,"./config/config":332,"./crypto":348,"./encoding/armor":366,"./enums":368,"./hkp":369,"./key":371,"./keyring":372,"./message":375,"./openpgp":376,"./packet":380,"./signature":400,"./type/ecdh_symkey":401,"./type/kdf_params":402,"./type/keyid":403,"./type/mpi":404,"./type/oid":405,"./type/s2k":406,"./util":407,"./wkd":408,"./worker/async_proxy":409}],371:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48228,7 +48301,7 @@ function getExpirationTime(keyPacket, signature) {
   return expirationTime ? new Date(expirationTime) : Infinity;
 }
 
-},{"./config":333,"./crypto":348,"./encoding/armor":365,"./enums":367,"./packet":379,"./util":406,"babel-runtime/core-js/object/assign":24,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/core-js/object/values":32,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],371:[function(_dereq_,module,exports){
+},{"./config":333,"./crypto":348,"./encoding/armor":366,"./enums":368,"./packet":380,"./util":407,"babel-runtime/core-js/object/assign":24,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/core-js/object/values":32,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],372:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48255,7 +48328,7 @@ _keyring2.default.localstore = _localstore2.default;
 
 exports.default = _keyring2.default;
 
-},{"./keyring.js":372,"./localstore.js":373}],372:[function(_dereq_,module,exports){
+},{"./keyring.js":373,"./localstore.js":374}],373:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48538,7 +48611,7 @@ KeyArray.prototype.removeForId = function (keyId) {
 
 exports.default = Keyring;
 
-},{"../key":370,"./localstore":373,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],373:[function(_dereq_,module,exports){
+},{"../key":371,"./localstore":374,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],374:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -48674,7 +48747,7 @@ function storeKeys(storage, itemname, keys) {
 
 exports.default = LocalStore;
 
-},{"../config":333,"../key":370,"../util":406,"babel-runtime/core-js/json/stringify":23,"node-localstorage":"node-localstorage"}],374:[function(_dereq_,module,exports){
+},{"../config":333,"../key":371,"../util":407,"babel-runtime/core-js/json/stringify":23,"node-localstorage":"node-localstorage"}],375:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -50261,7 +50334,7 @@ function fromBinary(bytes, filename) {
   return new Message(literalDataPacketlist);
 }
 
-},{"./config":333,"./crypto":348,"./encoding/armor":365,"./enums":367,"./key":370,"./packet":379,"./signature":399,"./type/keyid":402,"./util":406,"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],375:[function(_dereq_,module,exports){
+},{"./config":333,"./crypto":348,"./encoding/armor":366,"./enums":368,"./key":371,"./packet":380,"./signature":400,"./type/keyid":403,"./util":407,"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],376:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51299,7 +51372,7 @@ function nativeAEAD() {
   return _config2.default.aead_protect && ((_config2.default.aead_protect_version !== 4 || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto() || _config2.default.aead_protect_version === 4 && _config2.default.aead_mode === _enums2.default.aead.eax && _util2.default.getWebCrypto());
 }
 
-},{"./cleartext":330,"./config/config":332,"./enums":367,"./key":370,"./message":374,"./polyfills":398,"./util":406,"./worker/async_proxy":408,"babel-runtime/core-js/object/keys":30,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],376:[function(_dereq_,module,exports){
+},{"./cleartext":330,"./config/config":332,"./enums":368,"./key":371,"./message":375,"./polyfills":399,"./util":407,"./worker/async_proxy":409,"babel-runtime/core-js/object/keys":30,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],377:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51517,7 +51590,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":367,"./all_packets.js":376,"./compressed.js":378,"./literal.js":380,"./marker.js":381,"./one_pass_signature.js":382,"./public_key.js":385,"./public_key_encrypted_session_key.js":386,"./public_subkey.js":387,"./secret_key.js":388,"./secret_subkey.js":389,"./signature.js":390,"./sym_encrypted_aead_protected.js":391,"./sym_encrypted_integrity_protected.js":392,"./sym_encrypted_session_key.js":393,"./symmetrically_encrypted.js":394,"./trust.js":395,"./user_attribute.js":396,"./userid.js":397,"babel-runtime/core-js/object/assign":24}],377:[function(_dereq_,module,exports){
+},{"../enums.js":368,"./all_packets.js":377,"./compressed.js":379,"./literal.js":381,"./marker.js":382,"./one_pass_signature.js":383,"./public_key.js":386,"./public_key_encrypted_session_key.js":387,"./public_subkey.js":388,"./secret_key.js":389,"./secret_subkey.js":390,"./signature.js":391,"./sym_encrypted_aead_protected.js":392,"./sym_encrypted_integrity_protected.js":393,"./sym_encrypted_session_key.js":394,"./symmetrically_encrypted.js":395,"./trust.js":396,"./user_attribute.js":397,"./userid.js":398,"babel-runtime/core-js/object/assign":24}],378:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51695,7 +51768,7 @@ function packetlistCloneToSignature(clone) {
   return new _signature.Signature(packetlist);
 }
 
-},{"../cleartext":330,"../key":370,"../message":374,"../signature":399,"../type/keyid":402,"../util":406,"./packetlist":384}],378:[function(_dereq_,module,exports){
+},{"../cleartext":330,"../key":371,"../message":375,"../signature":400,"../type/keyid":403,"../util":407,"./packetlist":385}],379:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51897,7 +51970,7 @@ if (nodeZlib) {
   };
 }
 
-},{"../compression/bzip2.build.js":331,"../config":333,"../enums":367,"../util":406,"pako":308}],379:[function(_dereq_,module,exports){
+},{"../compression/bzip2.build.js":331,"../config":333,"../enums":368,"../util":407,"pako":308}],380:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51939,7 +52012,7 @@ var mod = {
 
 exports.default = mod;
 
-},{"./all_packets":376,"./clone":377,"./packetlist":384,"babel-runtime/core-js/object/assign":24}],380:[function(_dereq_,module,exports){
+},{"./all_packets":377,"./clone":378,"./packetlist":385,"babel-runtime/core-js/object/assign":24}],381:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -52114,7 +52187,7 @@ Literal.prototype.write = function () {
 
 exports.default = Literal;
 
-},{"../enums":367,"../util":406}],381:[function(_dereq_,module,exports){
+},{"../enums":368,"../util":407}],382:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -52189,7 +52262,7 @@ Marker.prototype.read = function (bytes) {
 
 exports.default = Marker;
 
-},{"../enums":367}],382:[function(_dereq_,module,exports){
+},{"../enums":368}],383:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -52333,7 +52406,7 @@ OnePassSignature.prototype.postCloneTypeFix = function () {
 
 exports.default = OnePassSignature;
 
-},{"../enums":367,"../type/keyid":402,"../util":406}],383:[function(_dereq_,module,exports){
+},{"../enums":368,"../type/keyid":403,"../util":407}],384:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -52591,7 +52664,7 @@ exports.default = {
  * @module packet/packet
  */
 
-},{"../util":406,"babel-runtime/helpers/slicedToArray":41}],384:[function(_dereq_,module,exports){
+},{"../util":407,"babel-runtime/helpers/slicedToArray":41}],385:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -52959,7 +53032,7 @@ List.fromStructuredClone = function (packetlistClone) {
 
 exports.default = List;
 
-},{"../config":333,"../enums":367,"../util":406,"./all_packets":376,"./packet":383,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],385:[function(_dereq_,module,exports){
+},{"../config":333,"../enums":368,"../util":407,"./all_packets":377,"./packet":384,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],386:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -53275,7 +53348,7 @@ PublicKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKey;
 
-},{"../config":333,"../crypto":348,"../enums":367,"../type/keyid":402,"../type/mpi":403,"../util":406}],386:[function(_dereq_,module,exports){
+},{"../config":333,"../crypto":348,"../enums":368,"../type/keyid":403,"../type/mpi":404,"../util":407}],387:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -53545,7 +53618,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":348,"../enums":367,"../type/keyid":402,"../type/mpi":403,"../util":406,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],387:[function(_dereq_,module,exports){
+},{"../crypto":348,"../enums":368,"../type/keyid":403,"../type/mpi":404,"../util":407,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],388:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -53604,7 +53677,7 @@ PublicSubkey.prototype.constructor = PublicSubkey;
 
 exports.default = PublicSubkey;
 
-},{"../enums":367,"./public_key":385}],388:[function(_dereq_,module,exports){
+},{"../enums":368,"./public_key":386}],389:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -54135,7 +54208,7 @@ SecretKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SecretKey;
 
-},{"../crypto":348,"../enums":367,"../type/keyid.js":402,"../type/s2k":405,"../util":406,"./public_key":385,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],389:[function(_dereq_,module,exports){
+},{"../crypto":348,"../enums":368,"../type/keyid.js":403,"../type/s2k":406,"../util":407,"./public_key":386,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],390:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -54193,7 +54266,7 @@ SecretSubkey.prototype.constructor = SecretSubkey;
 
 exports.default = SecretSubkey;
 
-},{"../enums":367,"./secret_key":388}],390:[function(_dereq_,module,exports){
+},{"../enums":368,"./secret_key":389}],391:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55027,7 +55100,7 @@ Signature.prototype.postCloneTypeFix = function () {
 
 exports.default = Signature;
 
-},{"../crypto":348,"../enums":367,"../type/keyid.js":402,"../type/mpi.js":403,"../util":406,"./packet":383,"babel-runtime/core-js/object/entries":27,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],391:[function(_dereq_,module,exports){
+},{"../crypto":348,"../enums":368,"../type/keyid.js":403,"../type/mpi.js":404,"../util":407,"./packet":384,"babel-runtime/core-js/object/entries":27,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],392:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55331,7 +55404,7 @@ SymEncryptedAEADProtected.prototype.crypt = function () {
   };
 }();
 
-},{"../config":333,"../crypto":348,"../enums":367,"../util":406,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],392:[function(_dereq_,module,exports){
+},{"../config":333,"../crypto":348,"../enums":368,"../util":407,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],393:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55589,7 +55662,7 @@ function nodeDecrypt(algo, ct, key) {
   return new Uint8Array(pt);
 }
 
-},{"../crypto":348,"../enums":367,"../util":406,"asmcrypto.js/src/aes/cfb/exports":7,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],393:[function(_dereq_,module,exports){
+},{"../crypto":348,"../enums":368,"../util":407,"asmcrypto.js/src/aes/cfb/exports":7,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],394:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55905,7 +55978,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SymEncryptedSessionKey;
 
-},{"../config":333,"../crypto":348,"../enums":367,"../type/s2k":405,"../util":406,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],394:[function(_dereq_,module,exports){
+},{"../config":333,"../crypto":348,"../enums":368,"../type/s2k":406,"../util":407,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],395:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56083,7 +56156,7 @@ SymmetricallyEncrypted.prototype.encrypt = function () {
 
 exports.default = SymmetricallyEncrypted;
 
-},{"../config":333,"../crypto":348,"../enums":367,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],395:[function(_dereq_,module,exports){
+},{"../config":333,"../crypto":348,"../enums":368,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],396:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56130,7 +56203,7 @@ Trust.prototype.read = function () {}; // TODO
 
 exports.default = Trust;
 
-},{"../enums":367}],396:[function(_dereq_,module,exports){
+},{"../enums":368}],397:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56242,7 +56315,7 @@ UserAttribute.prototype.equals = function (usrAttr) {
 
 exports.default = UserAttribute;
 
-},{"../enums":367,"../util":406,"./packet":383}],397:[function(_dereq_,module,exports){
+},{"../enums":368,"../util":407,"./packet":384}],398:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56348,7 +56421,7 @@ Userid.prototype.format = function (userid) {
 
 exports.default = Userid;
 
-},{"../enums":367,"../util":406,"babel-runtime/core-js/object/assign":24}],398:[function(_dereq_,module,exports){
+},{"../enums":368,"../util":407,"babel-runtime/core-js/object/assign":24}],399:[function(_dereq_,module,exports){
 'use strict';
 
 var _assign = _dereq_('babel-runtime/core-js/object/assign');
@@ -56399,7 +56472,7 @@ if (typeof _assign2.default === 'undefined') {
   _dereq_('core-js/fn/object/assign');
 }
 
-},{"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/object/assign":24,"babel-runtime/core-js/symbol":34,"core-js/fn/array/fill":50,"core-js/fn/array/find":51,"core-js/fn/array/from":52,"core-js/fn/object/assign":53,"core-js/fn/promise":54,"core-js/fn/string/repeat":55,"core-js/fn/symbol":56,"core-js/fn/typed/uint8-array":57,"whatwg-fetch":329}],399:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/array/from":20,"babel-runtime/core-js/object/assign":24,"babel-runtime/core-js/symbol":34,"core-js/fn/array/fill":50,"core-js/fn/array/find":51,"core-js/fn/array/from":52,"core-js/fn/object/assign":53,"core-js/fn/promise":54,"core-js/fn/string/repeat":55,"core-js/fn/symbol":56,"core-js/fn/typed/uint8-array":57,"whatwg-fetch":329}],400:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56490,7 +56563,7 @@ function read(input) {
   return new Signature(packetlist);
 }
 
-},{"./encoding/armor":365,"./enums":367,"./packet":379}],400:[function(_dereq_,module,exports){
+},{"./encoding/armor":366,"./enums":368,"./packet":380}],401:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56571,7 +56644,7 @@ ECDHSymmetricKey.fromClone = function (clone) {
 
 exports.default = ECDHSymmetricKey;
 
-},{"../util":406}],401:[function(_dereq_,module,exports){
+},{"../util":407}],402:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56656,7 +56729,7 @@ KDFParams.fromClone = function (clone) {
 
 exports.default = KDFParams;
 
-},{"../enums.js":367}],402:[function(_dereq_,module,exports){
+},{"../enums.js":368}],403:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56765,7 +56838,7 @@ Keyid.wildcard = function () {
 
 exports.default = Keyid;
 
-},{"../util.js":406}],403:[function(_dereq_,module,exports){
+},{"../util.js":407}],404:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56929,7 +57002,7 @@ MPI.fromClone = function (clone) {
 
 exports.default = MPI;
 
-},{"../util":406,"bn.js":46}],404:[function(_dereq_,module,exports){
+},{"../util":407,"bn.js":46}],405:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -57054,7 +57127,7 @@ OID.fromClone = function (clone) {
 
 exports.default = OID;
 
-},{"../enums":367,"../util":406}],405:[function(_dereq_,module,exports){
+},{"../enums":368,"../util":407}],406:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -57286,7 +57359,7 @@ S2K.fromClone = function (clone) {
 
 exports.default = S2K;
 
-},{"../config":333,"../crypto":348,"../enums.js":367,"../util.js":406}],406:[function(_dereq_,module,exports){
+},{"../config":333,"../crypto":348,"../enums.js":368,"../util.js":407}],407:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58045,7 +58118,7 @@ exports.default = {
   }
 };
 
-},{"./config":333,"./encoding/base64":366,"./util":406,"address-rfc2822":1,"babel-runtime/core-js/object/values":32,"babel-runtime/helpers/slicedToArray":41}],407:[function(_dereq_,module,exports){
+},{"./config":333,"./encoding/base64":367,"./util":407,"address-rfc2822":1,"babel-runtime/core-js/object/values":32,"babel-runtime/helpers/slicedToArray":41}],408:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58150,7 +58223,7 @@ WKD.prototype.lookup = function (options) {
 
 exports.default = WKD;
 
-},{"./crypto":348,"./key":370,"./util":406,"babel-runtime/helpers/slicedToArray":41,"node-fetch":"node-fetch"}],408:[function(_dereq_,module,exports){
+},{"./crypto":348,"./key":371,"./util":407,"babel-runtime/helpers/slicedToArray":41,"node-fetch":"node-fetch"}],409:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58379,5 +58452,5 @@ AsyncProxy.prototype.delegate = function (method, options) {
 
 exports.default = AsyncProxy;
 
-},{"../crypto":348,"../packet":379,"../util.js":406,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/toConsumableArray":42,"babel-runtime/regenerator":44}]},{},[369])(369)
+},{"../crypto":348,"../packet":380,"../util.js":407,"babel-runtime/core-js/promise":33,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/toConsumableArray":42,"babel-runtime/regenerator":44}]},{},[370])(370)
 });

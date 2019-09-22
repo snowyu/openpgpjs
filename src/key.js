@@ -287,17 +287,18 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
+ * @param  {module:enums.keyFlags} keyFlags, optional keyFlags
  * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
  * @async
  */
-Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}) {
+Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}, keyFlags) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
-        if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+        if (await subKeys[i].verify(primaryKey, date, keyFlags) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
           if (isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
             return subKeys[i];
@@ -331,10 +332,11 @@ function isValidEncryptionKeyPacket(keyPacket, signature, date=new Date()) {
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
  * @param  {String}            userId, optional
+ * @param  {module:enums.keyFlags} keyFlags, optional keyFlags
  * @returns {Promise<Key|SubKey|null>} key or null if no encryption key has been found
  * @async
  */
-Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={}) {
+Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={}, keyFlags) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
@@ -343,7 +345,7 @@ Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
         // eslint-disable-next-line no-await-in-loop
-        if (await subKeys[i].verify(primaryKey, date) === enums.keyStatus.valid) {
+        if (await subKeys[i].verify(primaryKey, date, keyFlags) === enums.keyStatus.valid) {
           const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
           if (isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
             return subKeys[i];
@@ -920,6 +922,7 @@ User.prototype.toPacketlist = function() {
 
 /**
  * Signs user
+ *  use the privateKeys to sign the user
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey  The primary key packet
  * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
@@ -1157,6 +1160,7 @@ SubKey.generate = async function(options) {
  *                             The number of seconds after the key creation time that the key expires
  * @param  {Date} options.date  Override the creation date of the key and the key signatures
  * @param  {Object} options.userId                   (optional) user ID
+ * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  *
  * @returns {Promise<module:packet.Signature>} return the signature if successful.
  * @async
@@ -1164,7 +1168,11 @@ SubKey.generate = async function(options) {
 SubKey.bindSignature = async function(subkey, primaryKey, options={}) {
   const subkeySignatureOpts = {};
   subkeySignatureOpts.signatureType = enums.signature.subkey_binding;
-  subkeySignatureOpts.keyFlags = [options.sign ? enums.keyFlags.sign_data : enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  let vKeyFlags = options.sign ? enums.keyFlags.sign_data : enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage;
+  if (typeof options.keyFlags === 'number') {
+    vKeyFlags = vKeyFlags | options.keyFlags;
+  }
+  subkeySignatureOpts.keyFlags = [vKeyFlags];
   if (options.keyExpirationTime > 0) {
     subkeySignatureOpts.keyExpirationTime = options.keyExpirationTime;
     subkeySignatureOpts.keyNeverExpires = false;
@@ -1185,6 +1193,7 @@ SubKey.bindSignature = async function(subkey, primaryKey, options={}) {
  *                             The number of seconds after the key creation time that the key expires
  * @param  {Date} options.date  Override the creation date of the key and the key signatures
  * @param  {Object} options.userId                   (optional) user ID
+ * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  *
  * @returns {Promise<module:packet.Signature>} return the signature if successful.
  * @async
@@ -1230,16 +1239,27 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
   );
 };
 
+
+/**
+ * Returns the signature that has the latest creation date, while ignoring signatures created in the future.
+ * @param  {Date}                           date        Use the given date instead of the current time
+ * @returns {module:packet.Signature} The latest signature
+ */
+SubKey.prototype.getLatestSignature = function(date = new Date()) {
+  return getLatestSignature(this.bindingSignatures, date);
+};
+
 /**
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey The primary key packet
  * @param  {Date}                     date       Use the given date instead of the current time
+ * @param  {module:enums.keyFlags}    keyFlags (optional) verify the extended key usage flags for 0x10, 0x20, 0x80
  * @returns {Promise<module:enums.keyStatus>}    The status of the subkey
  * @async
  */
-SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
+SubKey.prototype.verify = async function(primaryKey, date=new Date(), keyFlags) {
   const that = this;
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
   // check for V3 expiration time
@@ -1248,6 +1268,10 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
   }
   // check subkey binding signatures
   const bindingSignature = getLatestSignature(this.bindingSignatures, date);
+  const vKeyFlags = bindingSignature.keyFlags;
+  if (keyFlags != null && vKeyFlags && (vKeyFlags[0] & keyFlags) !== keyFlags) {
+    return enums.keyStatus.invalid;
+  }
   // check binding signature is verified
   if (!(bindingSignature.verified || await bindingSignature.verify(primaryKey, dataToVerify))) {
     return enums.keyStatus.invalid;
@@ -1574,6 +1598,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     const userIdPacket = new packet.Userid();
     userIdPacket.format(userId);
 
+    // self-sign for each userId with the primary key
     const dataToSign = {};
     dataToSign.userId = userIdPacket;
     dataToSign.key = secretKeyPacket;

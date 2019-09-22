@@ -1959,6 +1959,52 @@ VYGdb3eNlV8CfoEC
     });
   });
 
+  it('Generate key - signingKey assign keyFlags for subkey', function() {
+    const userId = 'test <a@b.com>';
+    const keyFlags = openpgp.enums.keyFlags.authentication | openpgp.enums.keyFlags.shared_private_key;
+    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{sign: true, curve: 'curve25519'}, {keyFlags, sign: true, curve: 'curve25519'}]};
+    let privateKey;
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      privateKey = key;
+      return key.getSigningKey(null, new Date(), {}, keyFlags);
+    }).then(function(result){
+      expect(result).to.equal(privateKey.subKeys[1]);
+      let bindingSignature = privateKey.subKeys[0].getLatestSignature();
+      let vKeyFlags = bindingSignature.keyFlags;
+      expect(vKeyFlags).to.be.exist;
+      expect(vKeyFlags[0] & keyFlags).to.equal(0);
+
+      bindingSignature = result.getLatestSignature();
+      vKeyFlags = bindingSignature.keyFlags;
+      expect(vKeyFlags).to.be.exist;
+      expect(vKeyFlags[0] & keyFlags).to.equal(keyFlags);
+    });
+  });
+
+  it('Generate key - encryptionKey assign keyFlags for subkey', function() {
+    const userId = 'test <a@b.com>';
+    const keyFlags = openpgp.enums.keyFlags.authentication | openpgp.enums.keyFlags.shared_private_key;
+    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{curve: 'curve25519'}, {keyFlags, curve: 'curve25519'}]};
+    let privateKey;
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      privateKey = key;
+      return key.getEncryptionKey(null, new Date(), {}, keyFlags);
+    }).then(function(result){
+      expect(result).to.equal(privateKey.subKeys[1]);
+      let bindingSignature = privateKey.subKeys[0].getLatestSignature();
+      let vKeyFlags = bindingSignature.keyFlags;
+      expect(vKeyFlags).to.be.exist;
+      expect(vKeyFlags[0] & keyFlags).to.equal(0);
+
+      bindingSignature = result.getLatestSignature();
+      vKeyFlags = bindingSignature.keyFlags;
+      expect(vKeyFlags).to.be.exist;
+      expect(vKeyFlags[0] & keyFlags).to.equal(keyFlags);
+    });
+  });
+
   it('Sign and verify key - primary user', async function() {
     let publicKey = openpgp.key.readArmored(pub_sig_test).keys[0];
     const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];

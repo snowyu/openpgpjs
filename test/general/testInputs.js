@@ -6,8 +6,9 @@ function createSomeMessage(){
     const length = 50;
     let arr = [];
     for (let i= 0; i < length; i++){
-        arr.push(String.fromCharCode(
-            Math.floor(Math.random() * 10174) + 1));
+      let vCharcode = Math.floor(Math.random() * 10174) + 1;
+      if (vCharcode === 13) vCharcode = 10;
+      arr.push(String.fromCharCode(vCharcode));
     }
     return arr.join('');
 }

@@ -14,6 +14,12 @@
   * getSigningKey/getEncryptingKey will call the getValidKey.
   * 有些密钥算法只能用于sign，而有些密钥算法只能用于encrypt
   * 算了，暂时不getValidKey。
++ add `options.signKeyFlags` to `openpgp.encrypt`
+* getSigningKey 的原始逻辑是如果subkey找不到有效的，就用Primary签。
+  * 我修改为当没有keyFlags==null参数的时候，才考虑primaryKey.
+* openpgp.encrypt('string') 会将 CharCode `13` 转为 CharCode `10`.
+  * 找到了: `Literal.prototype.getText` 中做的转换：
+    * this.text = util.nativeEOL(text);
 asmcrypto.js@0.22.0 can not upgrade.
 
 新版本的openpgpjs已经直接把hash传入到 crypto.sign/verify的参数中,变动比较大。

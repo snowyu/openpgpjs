@@ -297,18 +297,26 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
+        const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
+
         // eslint-disable-next-line no-await-in-loop
-        if (await subKeys[i].verify(primaryKey, date, keyFlags) === enums.keyStatus.valid) {
-          const bindingSignature = getLatestSignature(subKeys[i].bindingSignatures, date);
-          if (isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
-            return subKeys[i];
+        if (await subKeys[i].verifyEx(primaryKey, bindingSignature, date) === enums.keyStatus.valid) {
+          const vKeyFlags = bindingSignature.keyFlags;
+          if (keyFlags == null || (vKeyFlags && (vKeyFlags[0] & keyFlags) === keyFlags)) {
+            if (isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
+              return subKeys[i];
+            }
           }
         }
       }
     }
+
     const primaryUser = await this.getPrimaryUser(date, userId);
-    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date)) {
+    // only used the primary key when no any sign subkeys or specified the primarykey.
+    if (primaryUser && keyFlags == null &&
+        (!keyId || primaryKey.getKeyId().equals(keyId)) &&
+        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))
+    {
       return this;
     }
   }
@@ -1260,6 +1268,11 @@ SubKey.prototype.getLatestSignature = function(date = new Date()) {
  * @async
  */
 SubKey.prototype.verify = async function(primaryKey, date=new Date(), keyFlags) {
+  const bindingSignature = getLatestSignature(this.bindingSignatures, date);
+  return this.verifyEx(primaryKey, bindingSignature, date, keyFlags);
+};
+
+SubKey.prototype.verifyEx = async function(primaryKey, bindingSignature, date = new Date(), keyFlags) {
   const that = this;
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
   // check for V3 expiration time
@@ -1267,7 +1280,6 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date(), keyFlags) 
     return enums.keyStatus.expired;
   }
   // check subkey binding signatures
-  const bindingSignature = getLatestSignature(this.bindingSignatures, date);
   const vKeyFlags = bindingSignature.keyFlags;
   if (keyFlags != null && vKeyFlags && (vKeyFlags[0] & keyFlags) !== keyFlags) {
     return enums.keyStatus.invalid;

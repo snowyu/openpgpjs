@@ -250,10 +250,11 @@ Message.prototype.getText = function() {
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
  * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
-Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userId={}) {
+Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userId={}, keyFlags) {
   let symAlgo;
   let aeadAlgo;
   let symEncryptedPacket;
@@ -281,7 +282,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     sessionKey = await crypto.generateSessionKey(symAlgo);
   }
 
-  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userId);
+  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userId, keyFlags);
 
   if (config.aead_protect && (config.aead_protect_version !== 4 || aeadAlgo)) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
@@ -317,15 +318,16 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the date
  * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<Message>}          new message with encrypted content
  * @async
  */
-export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard=false, date=new Date(), userId={}) {
+export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard=false, date=new Date(), userId={}, keyFlags) {
   const packetlist = new packet.List();
 
   if (publicKeys) {
     const results = await Promise.all(publicKeys.map(async function(publicKey) {
-      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userId);
+      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userId, keyFlags);
       if (!encryptionKey) {
         throw new Error('Could not find valid key packet for encryption in key ' +
                         publicKey.getKeyId().toHex());
@@ -387,6 +389,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
  * @param  {Date} options.date                    (optional) override the creation time of the signature
  * @param  {Integer} options.signatureExpirationTime (optional) the expired time(seconds) of the signature
  * @param  {Object} options.userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
@@ -424,7 +427,7 @@ Message.prototype.signEx = async function(privateKeys=[], options={signature:nul
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId);
+    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags);
     if (!signingKey) {
       throw new Error('Could not find valid key packet for signing in key ' +
                       privateKey.getKeyId().toHex());
@@ -454,11 +457,12 @@ Message.prototype.signEx = async function(privateKeys=[], options={signature:nul
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date                    (optional) override the creation time of the signature
  * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
-Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userId={}) {
-  const result = await this.signEx(privateKeys, {signature, date, userId});
+Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userId={}, keyFlags) {
+  const result = await this.signEx(privateKeys, {signature, date, userId, keyFlags});
   return result;
 };
 
@@ -488,15 +492,16 @@ Message.prototype.compress = function(compression) {
  * @param  {Signature} signature                 (optional) any existing detached signature
  * @param  {Date} date                           (optional) override the creation time of the signature
  * @param  {Object} userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
-Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date(), userId={}) {
+Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date(), userId={}, keyFlags) {
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId, keyFlags));
 };
 
 /**
@@ -505,6 +510,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @param  {Signature} options.signature                 (optional) any existing detached signature
  * @param  {Date} options.date                           (optional) override the creation time of the signature
  * @param  {Object} options.userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
@@ -523,11 +529,12 @@ Message.prototype.signDetachedEx = async function(privateKeys=[], options={signa
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
  * @param  {Object} userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userId={}) {
-  const result = await createSignaturePacketsEx(literalDataPacket, privateKeys, {signature, date, userId});
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userId={}, keyFlags) {
+  const result = await createSignaturePacketsEx(literalDataPacket, privateKeys, {signature, date, userId, keyFlags});
   return result;
 }
 
@@ -539,6 +546,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @param  {Date} options.date                         (optional) override the creationtime of the signature
  * @param  {Integer} options.signatureExpirationTime      (optional) the expired time(seconds) of the signature
  * @param  {Object} options.userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
@@ -553,7 +561,7 @@ export async function createSignaturePacketsEx(literalDataPacket, privateKeys, o
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId);
+    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags);
     if (!signingKey) {
       throw new Error(`Could not find valid signing key packet in key ${
           privateKey.getKeyId().toHex()}`);
@@ -575,17 +583,18 @@ export async function createSignaturePacketsEx(literalDataPacket, privateKeys, o
  * Verify message signatures
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
-Message.prototype.verify = function(keys, date=new Date()) {
+Message.prototype.verify = function(keys, date=new Date(), keyFlags) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
-  return createVerificationObjects(signatureList, literalDataList, keys, date);
+  return createVerificationObjects(signatureList, literalDataList, keys, date, keyFlags);
 };
 
 /**
@@ -593,17 +602,18 @@ Message.prototype.verify = function(keys, date=new Date()) {
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Signature} signature
  * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
-Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
+Message.prototype.verifyDetached = function(signature, keys, date=new Date(), keyFlags) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
   const signatureList = signature.packets;
-  return createVerificationObjects(signatureList, literalDataList, keys, date);
+  return createVerificationObjects(signatureList, literalDataList, keys, date, keyFlags);
 };
 
 /**
@@ -613,16 +623,17 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
+ * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
+export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date(), keyFlags) {
   return Promise.all(signatureList.map(async function(signature) {
     let keyPacket = null;
     await Promise.all(keys.map(async function(key) {
       // Look for the unique key that matches issuerKeyId of signature
-      const result = await key.getSigningKey(signature.issuerKeyId, date);
+      const result = await key.getSigningKey(signature.issuerKeyId, date, {}, keyFlags);
       if (result) {
         keyPacket = result.keyPacket;
       }

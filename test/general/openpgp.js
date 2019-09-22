@@ -638,6 +638,69 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
     });
 
+    it('should throw encrypt error if no authentication key(keyFlags)', async function () {
+      const userId = 'tst <a@b.com>';
+      // keyFlags: openpgp.enums.keyFlags.authentication
+      const opt = {
+        curve: 'curve25519', userIds: [userId],
+        subkeys: [
+          {sign: true},
+          {sign: false}
+        ]
+      };
+      const signKey = (await openpgp.generateKey(opt)).key;
+      // console.log(signKey)
+      const encOpt = {
+        data: '',
+        publicKeys: signKey,
+        privateKeys: signKey,
+        signKeyFlags: openpgp.enums.keyFlags.authentication,
+      };
+      let err;
+      try {
+        const encrypted = await openpgp.encrypt(encOpt);
+      } catch (error) {
+        err = error;
+      }
+      expect(err).to.be.exist;
+      expect(err.message).to.match(/Could not find valid key packet for signing in key/);
+    });
+
+    it('should encrypt and sign with authentication key(keyFlags)', async function () {
+      const userId = 'tst <a@b.com>';
+      // keyFlags: openpgp.enums.keyFlags.authentication
+      const opt = {
+        curve: 'curve25519', userIds: [userId],
+        subkeys: [
+          {sign: false},
+          {sign: true},
+          {sign: true, keyFlags: openpgp.enums.keyFlags.authentication},
+        ]
+      };
+      const signKey = (await openpgp.generateKey(opt)).key;
+      // console.log(signKey)
+      const encOpt = {
+        data: '',
+        publicKeys: signKey,
+        privateKeys: signKey,
+        signKeyFlags: openpgp.enums.keyFlags.authentication,
+      };
+      let err;
+      const encrypted = await openpgp.encrypt(encOpt);
+      const decOpt = {
+        publicKeys: signKey,
+        privateKeys: signKey,
+      };
+      decOpt.message = openpgp.message.readArmored(encrypted.data);
+      const decrypted = await openpgp.decrypt(decOpt);
+      expect(decrypted.data).to.equal('');
+      expect(decrypted.signatures[0].valid).to.be.true;
+      const signingKey = await signKey.getSigningKey(null, undefined, undefined, openpgp.enums.keyFlags.authentication);
+      expect(signingKey).to.equal(signKey.subKeys[2]);
+      expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+    });
+
     it('Decrypting key with wrong passphrase rejected', async function () {
       await expect(privateKey.keys[0].decrypt('wrong passphrase')).to.eventually.be.rejectedWith('Incorrect key passphrase');
     });

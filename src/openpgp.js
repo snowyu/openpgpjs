@@ -292,13 +292,14 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {Date} date                            (optional) override the creation date of the message and the message signature
  * @param  {Object} fromUserId                    (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {Object} toUserId                      (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {module:enums.keyFlags} signKeyFlags (optional) the sign key flags: 0x10, 0x20, 0x80
  * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
  *                                                  {data: ASCII armored message if 'armor' is true,
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
  * @async
  * @static
  */
-export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserId={}, toUserId={}, signatureExpirationTime=0 }) {
+export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, sessionKey, filename, compression=config.compression, armor=true, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserId={}, toUserId={}, signatureExpirationTime=0, signKeyFlags= null }) {
   checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
@@ -312,10 +313,10 @@ export function encrypt({ data, dataType, publicKeys, privateKeys, passwords, se
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        const detachedSignature = await message.signDetachedEx(privateKeys, {signature, date, userId:fromUserId, signatureExpirationTime});
+        const detachedSignature = await message.signDetachedEx(privateKeys, {signature, date, userId:fromUserId, signatureExpirationTime, keyFlags: signKeyFlags});
         result.signature = armor ? detachedSignature.armor() : detachedSignature;
       } else {
-        message = await message.signEx(privateKeys, {signature, date, userId:fromUserId, signatureExpirationTime});
+        message = await message.signEx(privateKeys, {signature, date, userId:fromUserId, signatureExpirationTime, keyFlags: signKeyFlags});
       }
     }
     message = message.compress(compression);

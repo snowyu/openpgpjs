@@ -288,11 +288,13 @@ function isValidSigningKeyPacket(keyPacket, signature, date=new Date()) {
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
  * @param  {module:enums.keyFlags} keyFlags, optional keyFlags
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
  * @async
  */
-Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}, keyFlags) {
+Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}, keyFlags, keyFlagOnly) {
   const primaryKey = this.keyPacket;
+  let vlatestSignKey;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
@@ -301,20 +303,23 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
 
         // eslint-disable-next-line no-await-in-loop
         if (await subKeys[i].verifyEx(primaryKey, bindingSignature, date) === enums.keyStatus.valid) {
-          const vKeyFlags = bindingSignature.keyFlags;
-          if (keyFlags == null || (vKeyFlags && (vKeyFlags[0] & keyFlags) === keyFlags)) {
-            if (isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
+          if (isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
+            const vKeyFlags = bindingSignature.keyFlags;
+            if (keyFlags == null || (vKeyFlags && (vKeyFlags[0] & keyFlags) === keyFlags)) {
               return subKeys[i];
             }
+            if (!vlatestSignKey) vlatestSignKey = subKeys[i];
           }
         }
       }
     }
 
+    if (keyFlagOnly && keyFlags != null) return null;
+
+    if (vlatestSignKey) return vlatestSignKey;
+
     const primaryUser = await this.getPrimaryUser(date, userId);
-    // only used the primary key when no any sign subkeys or specified the primarykey.
-    if (primaryUser && keyFlags == null &&
-        (!keyId || primaryKey.getKeyId().equals(keyId)) &&
+    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
         isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))
     {
       return this;

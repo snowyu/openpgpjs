@@ -390,6 +390,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
  * @param  {Integer} options.signatureExpirationTime (optional) the expired time(seconds) of the signature
  * @param  {Object} options.userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} options.keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
@@ -427,7 +428,7 @@ Message.prototype.signEx = async function(privateKeys=[], options={signature:nul
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags);
+    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags, options.keyFlagOnly);
     if (!signingKey) {
       throw new Error('Could not find valid key packet for signing in key ' +
                       privateKey.getKeyId().toHex());
@@ -458,11 +459,12 @@ Message.prototype.signEx = async function(privateKeys=[], options={signature:nul
  * @param  {Date} date                    (optional) override the creation time of the signature
  * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
-Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userId={}, keyFlags) {
-  const result = await this.signEx(privateKeys, {signature, date, userId, keyFlags});
+Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userId={}, keyFlags, keyFlagOnly) {
+  const result = await this.signEx(privateKeys, {signature, date, userId, keyFlags, keyFlagOnly});
   return result;
 };
 
@@ -493,15 +495,16 @@ Message.prototype.compress = function(compression) {
  * @param  {Date} date                           (optional) override the creation time of the signature
  * @param  {Object} userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
-Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date(), userId={}, keyFlags) {
+Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date(), userId={}, keyFlags, keyFlagOnly) {
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId, keyFlags));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId, keyFlags, keyFlagOnly));
 };
 
 /**
@@ -511,6 +514,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @param  {Date} options.date                           (optional) override the creation time of the signature
  * @param  {Object} options.userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} options.keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
@@ -530,11 +534,12 @@ Message.prototype.signDetachedEx = async function(privateKeys=[], options={signa
  * @param  {Date} date                         (optional) override the creationtime of the signature
  * @param  {Object} userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userId={}, keyFlags) {
-  const result = await createSignaturePacketsEx(literalDataPacket, privateKeys, {signature, date, userId, keyFlags});
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userId={}, keyFlags, keyFlagOnly) {
+  const result = await createSignaturePacketsEx(literalDataPacket, privateKeys, {signature, date, userId, keyFlags, keyFlagOnly});
   return result;
 }
 
@@ -547,6 +552,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @param  {Integer} options.signatureExpirationTime      (optional) the expired time(seconds) of the signature
  * @param  {Object} options.userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} options.keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
@@ -561,7 +567,7 @@ export async function createSignaturePacketsEx(literalDataPacket, privateKeys, o
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags);
+    const signingKey = await privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags, options.keyFlagOnly);
     if (!signingKey) {
       throw new Error(`Could not find valid signing key packet in key ${
           privateKey.getKeyId().toHex()}`);

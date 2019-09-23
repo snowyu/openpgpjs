@@ -644,8 +644,8 @@ describe('OpenPGP.js public api tests', function() {
       const opt = {
         curve: 'curve25519', userIds: [userId],
         subkeys: [
+          {sign: false},
           {sign: true},
-          {sign: false}
         ]
       };
       const signKey = (await openpgp.generateKey(opt)).key;
@@ -655,15 +655,38 @@ describe('OpenPGP.js public api tests', function() {
         publicKeys: signKey,
         privateKeys: signKey,
         signKeyFlags: openpgp.enums.keyFlags.authentication,
+        signKeyFlagOnly: true,
       };
       let err;
       try {
-        const encrypted = await openpgp.encrypt(encOpt);
+        await openpgp.encrypt(encOpt);
       } catch (error) {
         err = error;
       }
       expect(err).to.be.exist;
       expect(err.message).to.match(/Could not find valid key packet for signing in key/);
+      encOpt.signKeyFlagOnly = false;
+      err = undefined;
+      let encrypted;
+      try {
+        encrypted = await openpgp.encrypt(encOpt);
+      } catch (error) {
+        err = error;
+      }
+      expect(err).to.not.be.exist;
+      const decOpt = {
+        publicKeys: signKey,
+        privateKeys: signKey,
+      };
+      decOpt.message = openpgp.message.readArmored(encrypted.data);
+      const decrypted = await openpgp.decrypt(decOpt);
+      expect(decrypted.data).to.equal('');
+      expect(decrypted.signatures[0].valid).to.be.true;
+      const signingKey = await signKey.getSigningKey(null, undefined, undefined, openpgp.enums.keyFlags.authentication);
+      expect(signingKey).to.equal(signKey.subKeys[1]);
+      expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+      expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+
     });
 
     it('should encrypt and sign with authentication key(keyFlags)', async function () {
@@ -685,7 +708,6 @@ describe('OpenPGP.js public api tests', function() {
         privateKeys: signKey,
         signKeyFlags: openpgp.enums.keyFlags.authentication,
       };
-      let err;
       const encrypted = await openpgp.encrypt(encOpt);
       const decOpt = {
         publicKeys: signKey,

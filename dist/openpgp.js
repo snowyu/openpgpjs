@@ -45611,6 +45611,7 @@ function isValidSigningKeyPacket(keyPacket, signature) {
  * @param  {Date} date use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
  * @param  {module:enums.keyFlags} keyFlags, optional keyFlags
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
  * @async
  */
@@ -45620,21 +45621,23 @@ Key.prototype.getSigningKey = function () {
     var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
     var userId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var keyFlags = arguments[3];
-    var primaryKey, subKeys, i, bindingSignature, vKeyFlags, primaryUser;
+    var keyFlagOnly = arguments[4];
+    var primaryKey, vlatestSignKey, subKeys, i, bindingSignature, vKeyFlags, primaryUser;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
             primaryKey = this.keyPacket;
-            _context.next = 3;
+            vlatestSignKey = void 0;
+            _context.next = 4;
             return this.verifyPrimaryKey(date, userId);
 
-          case 3:
+          case 4:
             _context.t0 = _context.sent;
             _context.t1 = _enums2.default.keyStatus.valid;
 
             if (!(_context.t0 === _context.t1)) {
-              _context.next = 28;
+              _context.next = 34;
               break;
             }
 
@@ -45643,14 +45646,14 @@ Key.prototype.getSigningKey = function () {
             });
             i = 0;
 
-          case 8:
+          case 9:
             if (!(i < subKeys.length)) {
-              _context.next = 23;
+              _context.next = 25;
               break;
             }
 
             if (!(!keyId || subKeys[i].getKeyId().equals(keyId))) {
-              _context.next = 20;
+              _context.next = 22;
               break;
             }
 
@@ -45658,55 +45661,74 @@ Key.prototype.getSigningKey = function () {
 
             // eslint-disable-next-line no-await-in-loop
 
-            _context.next = 13;
+            _context.next = 14;
             return subKeys[i].verifyEx(primaryKey, bindingSignature, date);
 
-          case 13:
+          case 14:
             _context.t2 = _context.sent;
             _context.t3 = _enums2.default.keyStatus.valid;
 
             if (!(_context.t2 === _context.t3)) {
-              _context.next = 20;
+              _context.next = 22;
+              break;
+            }
+
+            if (!isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
+              _context.next = 22;
               break;
             }
 
             vKeyFlags = bindingSignature.keyFlags;
 
             if (!(keyFlags == null || vKeyFlags && (vKeyFlags[0] & keyFlags) === keyFlags)) {
-              _context.next = 20;
-              break;
-            }
-
-            if (!isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, date)) {
-              _context.next = 20;
+              _context.next = 21;
               break;
             }
 
             return _context.abrupt('return', subKeys[i]);
 
-          case 20:
+          case 21:
+            if (!vlatestSignKey) vlatestSignKey = subKeys[i];
+
+          case 22:
             i++;
-            _context.next = 8;
+            _context.next = 9;
             break;
 
-          case 23:
-            _context.next = 25;
+          case 25:
+            if (!(keyFlagOnly && keyFlags != null)) {
+              _context.next = 27;
+              break;
+            }
+
+            return _context.abrupt('return', null);
+
+          case 27:
+            if (!vlatestSignKey) {
+              _context.next = 29;
+              break;
+            }
+
+            return _context.abrupt('return', vlatestSignKey);
+
+          case 29:
+            _context.next = 31;
             return this.getPrimaryUser(date, userId);
 
-          case 25:
+          case 31:
             primaryUser = _context.sent;
 
-            if (!(primaryUser && keyFlags == null && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
-              _context.next = 28;
+            if (!(primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, date))) {
+              _context.next = 34;
               break;
             }
 
             return _context.abrupt('return', this);
 
-          case 28:
+          case 34:
             return _context.abrupt('return', null);
 
-          case 29:
+          case 35:
           case 'end':
             return _context.stop();
         }
@@ -49057,6 +49079,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
  * @param  {Integer} options.signatureExpirationTime (optional) the expired time(seconds) of the signature
  * @param  {Object} options.userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} options.keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
@@ -49070,6 +49093,7 @@ var encryptSessionKey = exports.encryptSessionKey = function () {
  * @param  {Date} date                         (optional) override the creationtime of the signature
  * @param  {Object} userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
@@ -49079,13 +49103,14 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
     var date = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : new Date();
     var userId = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
     var keyFlags = arguments[5];
+    var keyFlagOnly = arguments[6];
     var result;
     return _regenerator2.default.wrap(function _callee17$(_context17) {
       while (1) {
         switch (_context17.prev = _context17.next) {
           case 0:
             _context17.next = 2;
-            return createSignaturePacketsEx(literalDataPacket, privateKeys, { signature: signature, date: date, userId: userId, keyFlags: keyFlags });
+            return createSignaturePacketsEx(literalDataPacket, privateKeys, { signature: signature, date: date, userId: userId, keyFlags: keyFlags, keyFlagOnly: keyFlagOnly });
 
           case 2:
             result = _context17.sent;
@@ -49113,6 +49138,7 @@ var createSignaturePackets = exports.createSignaturePackets = function () {
  * @param  {Integer} options.signatureExpirationTime      (optional) the expired time(seconds) of the signature
  * @param  {Object} options.userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} options.keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
@@ -49150,7 +49176,7 @@ var createSignaturePacketsEx = exports.createSignaturePacketsEx = function () {
 
                       case 2:
                         _context18.next = 4;
-                        return privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags);
+                        return privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags, options.keyFlagOnly);
 
                       case 4:
                         signingKey = _context18.sent;
@@ -50051,7 +50077,7 @@ Message.prototype.encrypt = function () {
 
                       case 2:
                         _context12.next = 4;
-                        return privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags);
+                        return privateKey.getSigningKey(undefined, options.date, options.userId, options.keyFlags, options.keyFlagOnly);
 
                       case 4:
                         signingKey = _context12.sent;
@@ -50131,6 +50157,7 @@ Message.prototype.encrypt = function () {
  * @param  {Date} date                    (optional) override the creation time of the signature
  * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
@@ -50141,13 +50168,14 @@ Message.prototype.sign = function () {
     var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
     var userId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
     var keyFlags = arguments[4];
+    var keyFlagOnly = arguments[5];
     var result;
     return _regenerator2.default.wrap(function _callee14$(_context14) {
       while (1) {
         switch (_context14.prev = _context14.next) {
           case 0:
             _context14.next = 2;
-            return this.signEx(privateKeys, { signature: signature, date: date, userId: userId, keyFlags: keyFlags });
+            return this.signEx(privateKeys, { signature: signature, date: date, userId: userId, keyFlags: keyFlags, keyFlagOnly: keyFlagOnly });
 
           case 2:
             result = _context14.sent;
@@ -50193,6 +50221,7 @@ Message.prototype.compress = function (compression) {
  * @param  {Date} date                           (optional) override the creation time of the signature
  * @param  {Object} userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
@@ -50203,6 +50232,7 @@ Message.prototype.signDetached = function () {
     var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
     var userId = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
     var keyFlags = arguments[4];
+    var keyFlagOnly = arguments[5];
     var literalDataPacket;
     return _regenerator2.default.wrap(function _callee15$(_context15) {
       while (1) {
@@ -50220,7 +50250,7 @@ Message.prototype.signDetached = function () {
           case 3:
             _context15.t0 = _signature.Signature;
             _context15.next = 6;
-            return createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId, keyFlags);
+            return createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId, keyFlags, keyFlagOnly);
 
           case 6:
             _context15.t1 = _context15.sent;
@@ -50246,6 +50276,7 @@ Message.prototype.signDetached = function () {
  * @param  {Date} options.date                           (optional) override the creation time of the signature
  * @param  {Object} options.userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {module:enums.keyFlags} options.keyFlags (optional) extends the key usage: 0x10, 0x20, 0x80
+ * @param  {Boolean} options.keyFlagOnly, optional the signing key must have the keyFlags, only used when have keyFlags.
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
@@ -50844,6 +50875,7 @@ function encryptKey(_ref7) {
  * @param  {Object} fromUserId                    (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
  * @param  {Object} toUserId                      (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
  * @param  {module:enums.keyFlags} signKeyFlags (optional) the sign key flags: 0x10, 0x20, 0x80
+ * @param  {Boolean} signkeyFlagOnly, optional the signing key must have the signkeyFlags, only used when have signkeyFlags.
  * @returns {Promise<Object>}                      encrypted (and optionally signed message) in the form:
  *                                                  {data: ASCII armored message if 'armor' is true,
  *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
@@ -50879,7 +50911,9 @@ function encrypt(_ref9) {
       _ref9$signatureExpira = _ref9.signatureExpirationTime,
       signatureExpirationTime = _ref9$signatureExpira === undefined ? 0 : _ref9$signatureExpira,
       _ref9$signKeyFlags = _ref9.signKeyFlags,
-      signKeyFlags = _ref9$signKeyFlags === undefined ? null : _ref9$signKeyFlags;
+      signKeyFlags = _ref9$signKeyFlags === undefined ? null : _ref9$signKeyFlags,
+      _ref9$signKeyFlagOnly = _ref9.signKeyFlagOnly,
+      signKeyFlagOnly = _ref9$signKeyFlagOnly === undefined ? false : _ref9$signKeyFlagOnly;
 
   checkData(data);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
@@ -50911,7 +50945,7 @@ function encrypt(_ref9) {
             }
 
             _context3.next = 6;
-            return message.signDetachedEx(privateKeys, { signature: signature, date: date, userId: fromUserId, signatureExpirationTime: signatureExpirationTime, keyFlags: signKeyFlags });
+            return message.signDetachedEx(privateKeys, { signature: signature, date: date, userId: fromUserId, signatureExpirationTime: signatureExpirationTime, keyFlags: signKeyFlags, keyFlagOnly: signKeyFlagOnly });
 
           case 6:
             detachedSignature = _context3.sent;
@@ -50922,7 +50956,7 @@ function encrypt(_ref9) {
 
           case 10:
             _context3.next = 12;
-            return message.signEx(privateKeys, { signature: signature, date: date, userId: fromUserId, signatureExpirationTime: signatureExpirationTime, keyFlags: signKeyFlags });
+            return message.signEx(privateKeys, { signature: signature, date: date, userId: fromUserId, signatureExpirationTime: signatureExpirationTime, keyFlags: signKeyFlags, keyFlagOnly: signKeyFlagOnly });
 
           case 12:
             message = _context3.sent;

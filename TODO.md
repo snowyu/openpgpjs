@@ -17,6 +17,8 @@
 + add `options.signKeyFlags` to `openpgp.encrypt`
 * getSigningKey 的原始逻辑是如果subkey找不到有效的，就用Primary签。
   * 我修改为当没有keyFlags==null参数的时候，才考虑primaryKey.
+  * 如果用户没有keyFlags指定的key就不兼容了，强制使用主钥也不对。需要增加一个属性，决定是否兼容。
+    * keyFlagOnly
 * openpgp.encrypt('string') 会将 CharCode `13` 转为 CharCode `10`.
   * 找到了: `Literal.prototype.getText` 中做的转换：
     * this.text = util.nativeEOL(text);

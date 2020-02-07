@@ -2438,4 +2438,13 @@ VYGdb3eNlV8CfoEC
     expect(decrypted.getText()).to.be.equal(vData);
   });
 
+  it('JSON stringify key', function() {
+    let keys = openpgp.key.readArmored(twoKeys).keys;
+    expect(keys).have.length(2);
+    expect(keys[0].toJSON()).to.be.string('-----BEGIN PGP PUBLIC KEY BLOCK-----');
+    expect(keys[1].toJSON()).to.be.string('-----BEGIN PGP PUBLIC KEY BLOCK-----');
+    keys = JSON.stringify(keys);
+    expect(keys).to.be.string('["-----BEGIN PGP PUBLIC KEY BLOCK-----');
+  });
+
 }

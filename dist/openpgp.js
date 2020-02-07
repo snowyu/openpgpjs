@@ -45582,6 +45582,14 @@ Key.prototype.armor = function () {
 };
 
 /**
+ * Returns ASCII armored text of key for JSON
+ * @returns {String} ASCII armor
+ */
+Key.prototype.toJSON = function () {
+  return this.armor();
+};
+
+/**
  * Returns the signature that has the latest creation date, while ignoring signatures created in the future.
  * @param  {Array<module:packet.Signature>} signatures  List of signatures
  * @param  {Date}                           date        Use the given date instead of the current time

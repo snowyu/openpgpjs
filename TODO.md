@@ -1,3 +1,11 @@
++ add toJSON() method to Key
++ add signatureType param to user.sign, key.signAllUsers and key.signPrimaryUser
++ add signKeyFlagOnly option to encrypt
++ add keyFlagOnly to sign
++ add the keyFlagOnly option to sign/signEx/signDetached/signDetachedEx
++ add the keyFlagOnly option to getSigningKey
++ add options.signKeyFlags to openpgp.encrypt for only used the signKeyFlags to sign the encrypted message
++ add keyFlags option to Message.sign/verify
 + add Subkey
 + add keyExpirationTime
 + add `SubKey::getLatestSignature`

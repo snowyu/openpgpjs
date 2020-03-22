@@ -13,7 +13,8 @@ import cipher from './cipher';
 import hash from './hash';
 import cfb from './cfb';
 import gcm from './gcm';
-import eax from './eax';
+import CMAC from './cmac';
+import eax, { OMAC } from './eax';
 import ocb from './ocb';
 import publicKey from './public_key';
 import signature from './signature';
@@ -33,7 +34,9 @@ const mod = {
   cfb: cfb,
   /** @see module:crypto/gcm */
   gcm: gcm,
+  CMAC,
   experimental_gcm: gcm,
+  OMAC,
   /** @see module:crypto/eax */
   eax: eax,
   /** @see module:crypto/ocb */

@@ -41,7 +41,7 @@ const zero = new Uint8Array(blockLength);
 const one = new Uint8Array(blockLength); one[blockLength - 1] = 1;
 const two = new Uint8Array(blockLength); two[blockLength - 1] = 2;
 
-async function OMAC(key) {
+export async function OMAC(key) {
   const cmac = await CMAC(key);
   return function(t, message) {
     return cmac(util.concatUint8Array([t, message]));

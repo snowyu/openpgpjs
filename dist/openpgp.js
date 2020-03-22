@@ -34485,7 +34485,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.1.2",
+  versionstring: "OpenPGP.js v3.1.3",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -37172,6 +37172,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.OMAC = undefined;
 
 var _promise = _dereq_('babel-runtime/core-js/promise');
 
@@ -37189,7 +37190,7 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
-var OMAC = function () {
+var OMAC = exports.OMAC = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(key) {
     var cmac;
     return _regenerator2.default.wrap(function _callee$(_context) {
@@ -38322,6 +38323,10 @@ var _gcm = _dereq_('./gcm');
 
 var _gcm2 = _interopRequireDefault(_gcm);
 
+var _cmac = _dereq_('./cmac');
+
+var _cmac2 = _interopRequireDefault(_cmac);
+
 var _eax = _dereq_('./eax');
 
 var _eax2 = _interopRequireDefault(_eax);
@@ -38361,6 +38366,17 @@ var _aes_kw2 = _interopRequireDefault(_aes_kw);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // TODO move cfb and gcm to cipher
+/**
+ * @fileoverview Provides access to all cryptographic primitives used in OpenPGP.js
+ * @see module:crypto/crypto
+ * @see module:crypto/signature
+ * @see module:crypto/public_key
+ * @see module:crypto/cipher
+ * @see module:crypto/random
+ * @see module:crypto/hash
+ * @module crypto
+ */
+
 var mod = {
   /** @see module:crypto/cipher */
   cipher: _cipher2.default,
@@ -38370,7 +38386,9 @@ var mod = {
   cfb: _cfb2.default,
   /** @see module:crypto/gcm */
   gcm: _gcm2.default,
+  CMAC: _cmac2.default,
   experimental_gcm: _gcm2.default,
+  OMAC: _eax.OMAC,
   /** @see module:crypto/eax */
   eax: _eax2.default,
   /** @see module:crypto/ocb */
@@ -38387,22 +38405,13 @@ var mod = {
   pkcs5: _pkcs4.default,
   /** @see module:crypto/aes_kw */
   aes_kw: _aes_kw2.default
-}; /**
-    * @fileoverview Provides access to all cryptographic primitives used in OpenPGP.js
-    * @see module:crypto/crypto
-    * @see module:crypto/signature
-    * @see module:crypto/public_key
-    * @see module:crypto/cipher
-    * @see module:crypto/random
-    * @see module:crypto/hash
-    * @module crypto
-    */
+};
 
 (0, _assign2.default)(mod, _crypto2.default);
 
 exports.default = mod;
 
-},{"./aes_kw":334,"./cfb":335,"./cipher":340,"./crypto":343,"./eax":344,"./gcm":345,"./hash":346,"./ocb":349,"./pkcs1":350,"./pkcs5":351,"./public_key":361,"./random":364,"./signature":365,"babel-runtime/core-js/object/assign":24}],349:[function(_dereq_,module,exports){
+},{"./aes_kw":334,"./cfb":335,"./cipher":340,"./cmac":342,"./crypto":343,"./eax":344,"./gcm":345,"./hash":346,"./ocb":349,"./pkcs1":350,"./pkcs5":351,"./public_key":361,"./random":364,"./signature":365,"babel-runtime/core-js/object/assign":24}],349:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {

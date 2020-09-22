@@ -36,6 +36,6 @@ asmcrypto.js@0.22.0 can not upgrade.
 不过看代码在crypto中的rsa算法上对hashed值又做了一次hash,这个操作太...
 elliptic上有直接传递hashed值。参看elliptic上的代码发现传递的hashed值是options.
 这又是啥操作？？乱扯！！
-
++ !cipher should polyfill with native crypto.
 
 

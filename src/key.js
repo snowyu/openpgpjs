@@ -928,6 +928,63 @@ User.create = function(aUserId) {
   return new User(userIdPacket);
 };
 
+User.selfSignUserId = async function(userId, secretKeyPacket, options, isPrimaryUserID) {
+  const userIdPacket = new packet.Userid();
+  userIdPacket.format(userId);
+
+  // self-sign for each userId with the primary key
+  const dataToSign = {};
+  dataToSign.userId = userIdPacket;
+  dataToSign.key = secretKeyPacket;
+  const signaturePacket = new packet.Signature(options.date);
+  signaturePacket.signatureType = enums.signature.cert_generic;
+  signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
+  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretKeyPacket);
+  signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+  signaturePacket.preferredSymmetricAlgorithms = [];
+  // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
+  signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+  if (config.aead_protect && config.aead_protect_version === 4) {
+    signaturePacket.preferredAeadAlgorithms = [];
+    signaturePacket.preferredAeadAlgorithms.push(enums.aead.eax);
+    signaturePacket.preferredAeadAlgorithms.push(enums.aead.ocb);
+  }
+  signaturePacket.preferredHashAlgorithms = [];
+  // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
+  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
+  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
+  signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
+  signaturePacket.preferredCompressionAlgorithms = [];
+  signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
+  signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+  if (isPrimaryUserID) {
+    signaturePacket.isPrimaryUserID = true;
+    if (options.preferredKeyServer) {
+      signaturePacket.preferredKeyServer = options.preferredKeyServer;
+    }
+  }
+  if (config.integrity_protect) {
+    signaturePacket.features = [0];
+    signaturePacket.features[0] |= enums.features.modification_detection;
+  }
+  if (config.aead_protect && config.aead_protect_version === 4) {
+    signaturePacket.features || (signaturePacket.features = [0]);
+    signaturePacket.features[0] |= enums.features.aead;
+    signaturePacket.features[0] |= enums.features.v5_keys;
+  }
+  if (options.keyExpirationTime > 0) {
+    signaturePacket.keyExpirationTime = options.keyExpirationTime;
+    signaturePacket.keyNeverExpires = false;
+  }
+  await signaturePacket.sign(secretKeyPacket, dataToSign);
+
+  return { userIdPacket, signaturePacket };
+};
+
 /**
  * Transforms structured user data to packetlist
  * @returns {module:packet.List}
@@ -1619,61 +1676,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 
   packetlist.push(secretKeyPacket);
 
-  await Promise.all(options.userIds.map(async function(userId, index) {
-    const userIdPacket = new packet.Userid();
-    userIdPacket.format(userId);
-
-    // self-sign for each userId with the primary key
-    const dataToSign = {};
-    dataToSign.userId = userIdPacket;
-    dataToSign.key = secretKeyPacket;
-    const signaturePacket = new packet.Signature(options.date);
-    signaturePacket.signatureType = enums.signature.cert_generic;
-    signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretKeyPacket);
-    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.preferredSymmetricAlgorithms = [];
-    // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
-    if (config.aead_protect && config.aead_protect_version === 4) {
-      signaturePacket.preferredAeadAlgorithms = [];
-      signaturePacket.preferredAeadAlgorithms.push(enums.aead.eax);
-      signaturePacket.preferredAeadAlgorithms.push(enums.aead.ocb);
-    }
-    signaturePacket.preferredHashAlgorithms = [];
-    // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
-    signaturePacket.preferredCompressionAlgorithms = [];
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
-    if (index === 0) {
-      signaturePacket.isPrimaryUserID = true;
-      if (options.preferredKeyServer) {
-        signaturePacket.preferredKeyServer = options.preferredKeyServer;
-      }
-    }
-    if (config.integrity_protect) {
-      signaturePacket.features = [0];
-      signaturePacket.features[0] |= enums.features.modification_detection;
-    }
-    if (config.aead_protect && config.aead_protect_version === 4) {
-      signaturePacket.features || (signaturePacket.features = [0]);
-      signaturePacket.features[0] |= enums.features.aead;
-      signaturePacket.features[0] |= enums.features.v5_keys;
-    }
-    if (options.keyExpirationTime > 0) {
-      signaturePacket.keyExpirationTime = options.keyExpirationTime;
-      signaturePacket.keyNeverExpires = false;
-    }
-    await signaturePacket.sign(secretKeyPacket, dataToSign);
-
-    return { userIdPacket, signaturePacket };
+  await Promise.all(options.userIds.map(function(userId, index) {
+    return User.selfSignUserId(userId, secretKeyPacket, options, index === 0);
   })).then(list => {
     list.forEach(({ userIdPacket, signaturePacket }) => {
       packetlist.push(userIdPacket);

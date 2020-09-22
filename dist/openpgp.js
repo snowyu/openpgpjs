@@ -44807,6 +44807,9 @@ var wrapKeyObject = function () {
                         signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zip);
                         if (index === 0) {
                           signaturePacket.isPrimaryUserID = true;
+                          if (options.preferredKeyServer) {
+                            signaturePacket.preferredKeyServer = options.preferredKeyServer;
+                          }
                         }
                         if (_config2.default.integrity_protect) {
                           signaturePacket.features = [0];
@@ -50663,10 +50666,12 @@ function generateKey(_ref2) {
       _ref2$date = _ref2.date,
       date = _ref2$date === undefined ? new Date() : _ref2$date,
       _ref2$subkeys = _ref2.subkeys,
-      subkeys = _ref2$subkeys === undefined ? [{}] : _ref2$subkeys;
+      subkeys = _ref2$subkeys === undefined ? [{}] : _ref2$subkeys,
+      _ref2$preferredKeySer = _ref2.preferredKeyServer,
+      preferredKeyServer = _ref2$preferredKeySer === undefined ? "" : _ref2$preferredKeySer;
 
   userIds = toArray(userIds);
-  var options = { userIds: userIds, passphrase: passphrase, numBits: numBits, keyExpirationTime: keyExpirationTime, curve: curve, date: date, subkeys: subkeys };
+  var options = { userIds: userIds, passphrase: passphrase, numBits: numBits, keyExpirationTime: keyExpirationTime, curve: curve, date: date, subkeys: subkeys, preferredKeyServer: preferredKeyServer };
   if (_util2.default.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
   }

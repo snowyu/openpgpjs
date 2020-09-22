@@ -1,3 +1,5 @@
++ add preferredKeyServer option to generateKey
+  * this will be added to the signature of the primary UserID
 + add toJSON() method to Key
 + add signatureType param to user.sign, key.signAllUsers and key.signPrimaryUser
 + add signKeyFlagOnly option to encrypt

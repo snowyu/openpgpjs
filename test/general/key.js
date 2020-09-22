@@ -1859,15 +1859,21 @@ VYGdb3eNlV8CfoEC
   it('Generate key - multi userid', function() {
     const userId1 = 'test <a@b.com>';
     const userId2 = 'test <b@c.com>';
-    const opt = {numBits: 512, userIds: [userId1, userId2], passphrase: '123'};
+    const preferredKeyServer = 'https://openpgp.org';
+    const opt = {
+      numBits: 512, userIds: [userId1, userId2], passphrase: '123',
+      preferredKeyServer,
+    };
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(2);
       expect(key.users[0].userId.userid).to.equal(userId1);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+      expect(key.users[0].selfCertifications[0].preferredKeyServer).to.equal(preferredKeyServer);
       expect(key.users[1].userId.userid).to.equal(userId2);
       expect(key.users[1].selfCertifications[0].isPrimaryUserID).to.be.null;
+      expect(key.users[1].selfCertifications[0].preferredKeyServer).to.be.null;
     });
   });
 

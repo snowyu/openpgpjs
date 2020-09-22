@@ -1654,6 +1654,9 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
+      if (options.preferredKeyServer) {
+        signaturePacket.preferredKeyServer = options.preferredKeyServer;
+      }
     }
     if (config.integrity_protect) {
       signaturePacket.features = [0];

@@ -497,7 +497,8 @@ describe('OpenPGP.js public api tests', function() {
           keyExpirationTime: 0,
           curve: "",
           date: now,
-          subkeys: []
+          subkeys: [],
+          preferredKeyServer: '',
         }).calledOnce).to.be.true;
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;

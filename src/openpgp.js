@@ -114,9 +114,9 @@ export function destroyWorker() {
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}], preferredKeyServer = ""}) {
+export function generateKey({ userIds=[], userAttributes=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}], preferredKeyServer = ""}) {
   userIds = toArray(userIds);
-  const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys, preferredKeyServer };
+  const options = { userIds, userAttributes, passphrase, numBits, keyExpirationTime, curve, date, subkeys, preferredKeyServer };
   if (util.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
   }

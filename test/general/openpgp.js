@@ -492,6 +492,7 @@ describe('OpenPGP.js public api tests', function() {
       return openpgp.generateKey(opt).then(function(newKey) {
         expect(keyGenStub.withArgs({
           userIds: [{ name: 'Test User', email: 'text@example.com' }],
+          userAttributes:[],
           passphrase: 'secret',
           numBits: 2048,
           keyExpirationTime: 0,

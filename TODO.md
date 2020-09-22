@@ -1,3 +1,4 @@
++ add userAttributes option to generateKey
 + add preferredKeyServer option to generateKey
   * this will be added to the signature of the primary UserID
 + add toJSON() method to Key

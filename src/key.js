@@ -928,13 +928,19 @@ User.create = function(aUserId) {
   return new User(userIdPacket);
 };
 
-User.selfSignUserId = async function(userId, secretKeyPacket, options, isPrimaryUserID) {
-  const userIdPacket = new packet.Userid();
-  userIdPacket.format(userId);
+User.selfSign = async function(user, secretKeyPacket, options, isUserId, isPrimaryUserID) {
+  let dataPacket;
+  if (isUserId) {
+    dataPacket = new packet.Userid();
+    dataPacket.format(user);
+  } else {
+    dataPacket = new packet.UserAttribute();
+    dataPacket.attributes = user;
+  }
 
   // self-sign for each userId with the primary key
   const dataToSign = {};
-  dataToSign.userId = userIdPacket;
+  dataToSign.userId = dataPacket;
   dataToSign.key = secretKeyPacket;
   const signaturePacket = new packet.Signature(options.date);
   signaturePacket.signatureType = enums.signature.cert_generic;
@@ -961,7 +967,7 @@ User.selfSignUserId = async function(userId, secretKeyPacket, options, isPrimary
   signaturePacket.preferredCompressionAlgorithms = [];
   signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
   signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
-  if (isPrimaryUserID) {
+  if (isUserId && isPrimaryUserID) {
     signaturePacket.isPrimaryUserID = true;
     if (options.preferredKeyServer) {
       signaturePacket.preferredKeyServer = options.preferredKeyServer;
@@ -982,7 +988,7 @@ User.selfSignUserId = async function(userId, secretKeyPacket, options, isPrimary
   }
   await signaturePacket.sign(secretKeyPacket, dataToSign);
 
-  return { userIdPacket, signaturePacket };
+  return { dataPacket, signaturePacket };
 };
 
 /**
@@ -1677,13 +1683,18 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIds.map(function(userId, index) {
-    return User.selfSignUserId(userId, secretKeyPacket, options, index === 0);
+    return User.selfSign(userId, secretKeyPacket, options, true, index === 0);
   })).then(list => {
-    list.forEach(({ userIdPacket, signaturePacket }) => {
-      packetlist.push(userIdPacket);
+    list.forEach(({ dataPacket, signaturePacket }) => {
+      packetlist.push(dataPacket);
       packetlist.push(signaturePacket);
     });
   });
+  if (Array.isArray(options.userAttributes) && options.userAttributes.length) {
+    const { dataPacket, signaturePacket } = await User.selfSign(options.userAttributes, secretKeyPacket, options, false);
+    packetlist.push(dataPacket);
+    packetlist.push(signaturePacket);
+  }
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];

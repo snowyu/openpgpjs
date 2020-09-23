@@ -1,3 +1,5 @@
+* fix(key) the verifyAllUsers should verify userAttribute too.
+  * [Broken]: return user instead of userid, and adding index of users of result
 + add userAttributes option to generateKey
 + add preferredKeyServer option to generateKey
   * this will be added to the signature of the primary UserID

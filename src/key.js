@@ -795,20 +795,22 @@ Key.prototype.verifyPrimaryUser = async function(keys) {
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
  * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
- * @returns {Promise<Array<{userid: String,
+ * @returns {Promise<Array<{user: module:key.User,
+ *                          index: number,
  *                          keyid: module:type/keyid,
- *                          valid: Boolean}>>} list of userid, signer's keyid and validity of signature
+ *                          valid: Boolean}>>} list of user, user index, signer's keyid and validity of signature
  * @async
  */
 Key.prototype.verifyAllUsers = async function(keys) {
   const results = [];
   const primaryKey = this.keyPacket;
-  await Promise.all(this.users.map(async function(user) {
+  await Promise.all(this.users.map(async function(user, index) {
     const signatures = keys ? await user.verifyAllCertifications(primaryKey, keys) :
       [{ keyid: primaryKey.keyid, valid: await user.verify(primaryKey) === enums.keyStatus.valid }];
     signatures.forEach(signature => {
       results.push({
-        userid: user.userId.userid,
+        user,
+        index,
         keyid: signature.keyid,
         valid: signature.valid
       });
@@ -929,18 +931,19 @@ User.create = function(aUserId) {
 };
 
 User.selfSign = async function(user, secretKeyPacket, options, isUserId, isPrimaryUserID) {
+  // self-sign for each user with the primary key
+  const dataToSign = {};
   let dataPacket;
   if (isUserId) {
     dataPacket = new packet.Userid();
     dataPacket.format(user);
+    dataToSign.userId = dataPacket;
   } else {
     dataPacket = new packet.UserAttribute();
     dataPacket.attributes = user;
+    dataToSign.userAttribute = dataPacket;
   }
 
-  // self-sign for each userId with the primary key
-  const dataToSign = {};
-  dataToSign.userId = dataPacket;
   dataToSign.key = secretKeyPacket;
   const signaturePacket = new packet.Signature(options.date);
   signaturePacket.signatureType = enums.signature.cert_generic;

@@ -1867,7 +1867,7 @@ VYGdb3eNlV8CfoEC
       userAttributes: userAttrs,
     };
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    return openpgp.generateKey(opt).then(function(key) {
+    return openpgp.generateKey(opt).then(async function(key) {
       key = key.key;
       expect(key.users.length).to.equal(3);
       expect(key.users[0].userId.userid).to.equal(userId1);
@@ -1877,6 +1877,9 @@ VYGdb3eNlV8CfoEC
       expect(key.users[1].selfCertifications[0].isPrimaryUserID).to.be.null;
       expect(key.users[1].selfCertifications[0].preferredKeyServer).to.be.null;
       expect(key.users[2].userAttribute.attributes).to.equal(userAttrs);
+      const signatures = (await key.verifyAllUsers()).filter(signature => signature.valid);
+      expect(signatures).to.have.length(3);
+      signatures.forEach(sig => expect(sig.user).to.equal(key.users[sig.index]));
     });
   });
 
@@ -2054,16 +2057,16 @@ VYGdb3eNlV8CfoEC
     const publicSigningKey = await publicKey.getSigningKey();
     const privateSigningKey = await privateKey.getSigningKey();
     expect(signatures.length).to.equal(4);
-    expect(signatures[0].userid).to.equal(publicKey.users[0].userId.userid);
+    expect(signatures[0].user.userId.userid).to.equal(publicKey.users[0].userId.userid);
     expect(signatures[0].keyid.toHex()).to.equal(publicSigningKey.getKeyId().toHex());
     expect(signatures[0].valid).to.be.null;
-    expect(signatures[1].userid).to.equal(publicKey.users[0].userId.userid);
+    expect(signatures[1].user.userId.userid).to.equal(publicKey.users[0].userId.userid);
     expect(signatures[1].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
     expect(signatures[1].valid).to.be.true;
-    expect(signatures[2].userid).to.equal(publicKey.users[1].userId.userid);
+    expect(signatures[2].user.userId.userid).to.equal(publicKey.users[1].userId.userid);
     expect(signatures[2].keyid.toHex()).to.equal(publicSigningKey.getKeyId().toHex());
     expect(signatures[2].valid).to.be.null;
-    expect(signatures[3].userid).to.equal(publicKey.users[1].userId.userid);
+    expect(signatures[3].user.userId.userid).to.equal(publicKey.users[1].userId.userid);
     expect(signatures[3].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
     expect(signatures[3].valid).to.be.true;
   });
@@ -2078,16 +2081,16 @@ VYGdb3eNlV8CfoEC
     const publicSigningKey = await publicKey.getSigningKey();
     const privateSigningKey = await privateKey.getSigningKey();
     expect(signatures.length).to.equal(4);
-    expect(signatures[0].userid).to.equal(publicKey.users[0].userId.userid);
+    expect(signatures[0].user.userId.userid).to.equal(publicKey.users[0].userId.userid);
     expect(signatures[0].keyid.toHex()).to.equal(publicSigningKey.getKeyId().toHex());
     expect(signatures[0].valid).to.be.null;
-    expect(signatures[1].userid).to.equal(publicKey.users[0].userId.userid);
+    expect(signatures[1].user.userId.userid).to.equal(publicKey.users[0].userId.userid);
     expect(signatures[1].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
     expect(signatures[1].valid).to.be.null;
-    expect(signatures[2].userid).to.equal(publicKey.users[1].userId.userid);
+    expect(signatures[2].user.userId.userid).to.equal(publicKey.users[1].userId.userid);
     expect(signatures[2].keyid.toHex()).to.equal(publicSigningKey.getKeyId().toHex());
     expect(signatures[2].valid).to.be.null;
-    expect(signatures[3].userid).to.equal(publicKey.users[1].userId.userid);
+    expect(signatures[3].user.userId.userid).to.equal(publicKey.users[1].userId.userid);
     expect(signatures[3].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
     expect(signatures[3].valid).to.be.null;
   });

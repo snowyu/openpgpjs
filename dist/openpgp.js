@@ -44457,7 +44457,7 @@ var createSignaturePacket = exports.createSignaturePacket = function () {
     }, _callee32, this);
   }));
 
-  return function createSignaturePacket(_x66, _x67, _x68, _x69, _x70, _x71) {
+  return function createSignaturePacket(_x67, _x68, _x69, _x70, _x71, _x72) {
     return _ref37.apply(this, arguments);
   };
 }();
@@ -44523,7 +44523,7 @@ var generate = exports.generate = function () {
     }, _callee50, this);
   }));
 
-  return function generate(_x108) {
+  return function generate(_x109) {
     return _ref56.apply(this, arguments);
   };
 }();
@@ -44553,7 +44553,7 @@ var generateSecretKey = function () {
     }, _callee51, this);
   }));
 
-  return function generateSecretKey(_x111) {
+  return function generateSecretKey(_x112) {
     return _ref57.apply(this, arguments);
   };
 }();
@@ -44583,7 +44583,7 @@ var generateSecretSubkey = function () {
     }, _callee52, this);
   }));
 
-  return function generateSecretSubkey(_x112) {
+  return function generateSecretSubkey(_x113) {
     return _ref58.apply(this, arguments);
   };
 }();
@@ -44699,7 +44699,7 @@ var reformat = exports.reformat = function () {
     }, _callee53, this, [[2, 9]]);
   }));
 
-  return function reformat(_x113) {
+  return function reformat(_x114) {
     return _ref59.apply(this, arguments);
   };
 }();
@@ -44747,7 +44747,7 @@ var wrapKeyObject = function () {
                 }, _callee54, this);
               }));
 
-              return function (_x118, _x119) {
+              return function (_x119, _x120) {
                 return _ref61.apply(this, arguments);
               };
             }()));
@@ -44813,7 +44813,7 @@ var wrapKeyObject = function () {
                 }, _callee55, this);
               }));
 
-              return function (_x120, _x121) {
+              return function (_x121, _x122) {
                 return _ref64.apply(this, arguments);
               };
             }())).then(function (packets) {
@@ -44871,7 +44871,7 @@ var wrapKeyObject = function () {
                 }, _callee56, this);
               }));
 
-              return function (_x122, _x123) {
+              return function (_x123, _x124) {
                 return _ref66.apply(this, arguments);
               };
             }()));
@@ -44887,7 +44887,7 @@ var wrapKeyObject = function () {
     }, _callee57, this);
   }));
 
-  return function wrapKeyObject(_x115, _x116, _x117) {
+  return function wrapKeyObject(_x116, _x117, _x118) {
     return _ref60.apply(this, arguments);
   };
 }();
@@ -44971,7 +44971,7 @@ var isDataRevoked = function () {
                 }, _callee58, this);
               }));
 
-              return function (_x130) {
+              return function (_x131) {
                 return _ref68.apply(this, arguments);
               };
             }()));
@@ -44998,7 +44998,7 @@ var isDataRevoked = function () {
     }, _callee59, this);
   }));
 
-  return function isDataRevoked(_x124, _x125, _x126, _x127, _x128) {
+  return function isDataRevoked(_x125, _x126, _x127, _x128, _x129) {
     return _ref67.apply(this, arguments);
   };
 }();
@@ -45067,7 +45067,7 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
     }, _callee60, this);
   }));
 
-  return function getPreferredHashAlgo(_x132, _x133) {
+  return function getPreferredHashAlgo(_x133, _x134) {
     return _ref69.apply(this, arguments);
   };
 }();
@@ -45131,7 +45131,7 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
                 }, _callee61, this);
               }));
 
-              return function (_x140) {
+              return function (_x141) {
                 return _ref71.apply(this, arguments);
               };
             }()));
@@ -45163,7 +45163,7 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
     }, _callee62, this);
   }));
 
-  return function getPreferredAlgo(_x136, _x137) {
+  return function getPreferredAlgo(_x137, _x138) {
     return _ref70.apply(this, arguments);
   };
 }();
@@ -45215,7 +45215,7 @@ var isAeadSupported = exports.isAeadSupported = function () {
                 }, _callee63, this);
               }));
 
-              return function (_x144) {
+              return function (_x145) {
                 return _ref74.apply(this, arguments);
               };
             }()));
@@ -45231,7 +45231,7 @@ var isAeadSupported = exports.isAeadSupported = function () {
     }, _callee64, this);
   }));
 
-  return function isAeadSupported(_x141) {
+  return function isAeadSupported(_x142) {
     return _ref73.apply(this, arguments);
   };
 }();
@@ -46876,9 +46876,10 @@ Key.prototype.verifyPrimaryUser = function () {
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
  * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
- * @returns {Promise<Array<{userid: String,
+ * @returns {Promise<Array<{user: module:key.User,
+ *                          index: number,
  *                          keyid: module:type/keyid,
- *                          valid: Boolean}>>} list of userid, signer's keyid and validity of signature
+ *                          valid: Boolean}>>} list of user, user index, signer's keyid and validity of signature
  * @async
  */
 Key.prototype.verifyAllUsers = function () {
@@ -46892,7 +46893,7 @@ Key.prototype.verifyAllUsers = function () {
             primaryKey = this.keyPacket;
             _context25.next = 4;
             return _promise2.default.all(this.users.map(function () {
-              var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(user) {
+              var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee24(user, index) {
                 var signatures;
                 return _regenerator2.default.wrap(function _callee24$(_context24) {
                   while (1) {
@@ -46931,7 +46932,8 @@ Key.prototype.verifyAllUsers = function () {
 
                         signatures.forEach(function (signature) {
                           results.push({
-                            userid: user.userId.userid,
+                            user: user,
+                            index: index,
                             keyid: signature.keyid,
                             valid: signature.valid
                           });
@@ -46945,7 +46947,7 @@ Key.prototype.verifyAllUsers = function () {
                 }, _callee24, this);
               }));
 
-              return function (_x49) {
+              return function (_x49, _x50) {
                 return _ref30.apply(this, arguments);
               };
             }()));
@@ -47020,7 +47022,7 @@ Key.prototype.generateSubkey = function () {
     }, _callee26, this);
   }));
 
-  return function (_x50) {
+  return function (_x51) {
     return _ref31.apply(this, arguments);
   };
 }();
@@ -47116,7 +47118,7 @@ Key.prototype.addSubkey = function () {
     }, _callee27, this);
   }));
 
-  return function (_x51) {
+  return function (_x52) {
     return _ref32.apply(this, arguments);
   };
 }();
@@ -47144,34 +47146,34 @@ User.create = function (aUserId) {
 
 User.selfSign = function () {
   var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee28(user, secretKeyPacket, options, isUserId, isPrimaryUserID) {
-    var dataPacket, dataToSign, signaturePacket;
+    var dataToSign, dataPacket, signaturePacket;
     return _regenerator2.default.wrap(function _callee28$(_context28) {
       while (1) {
         switch (_context28.prev = _context28.next) {
           case 0:
+            // self-sign for each user with the primary key
+            dataToSign = {};
             dataPacket = void 0;
 
             if (isUserId) {
               dataPacket = new _packet2.default.Userid();
               dataPacket.format(user);
+              dataToSign.userId = dataPacket;
             } else {
               dataPacket = new _packet2.default.UserAttribute();
               dataPacket.attributes = user;
+              dataToSign.userAttribute = dataPacket;
             }
 
-            // self-sign for each userId with the primary key
-            dataToSign = {};
-
-            dataToSign.userId = dataPacket;
             dataToSign.key = secretKeyPacket;
             signaturePacket = new _packet2.default.Signature(options.date);
 
             signaturePacket.signatureType = _enums2.default.signature.cert_generic;
             signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-            _context28.next = 10;
+            _context28.next = 9;
             return getPreferredHashAlgo(null, secretKeyPacket);
 
-          case 10:
+          case 9:
             signaturePacket.hashAlgorithm = _context28.sent;
 
             signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
@@ -47214,13 +47216,13 @@ User.selfSign = function () {
               signaturePacket.keyExpirationTime = options.keyExpirationTime;
               signaturePacket.keyNeverExpires = false;
             }
-            _context28.next = 32;
+            _context28.next = 31;
             return signaturePacket.sign(secretKeyPacket, dataToSign);
 
-          case 32:
+          case 31:
             return _context28.abrupt('return', { dataPacket: dataPacket, signaturePacket: signaturePacket });
 
-          case 33:
+          case 32:
           case 'end':
             return _context28.stop();
         }
@@ -47228,7 +47230,7 @@ User.selfSign = function () {
     }, _callee28, this);
   }));
 
-  return function (_x53, _x54, _x55, _x56, _x57) {
+  return function (_x54, _x55, _x56, _x57, _x58) {
     return _ref33.apply(this, arguments);
   };
 }();
@@ -47322,7 +47324,7 @@ User.prototype.sign = function () {
                 }, _callee29, this);
               }));
 
-              return function (_x61) {
+              return function (_x62) {
                 return _ref35.apply(this, arguments);
               };
             }()));
@@ -47343,7 +47345,7 @@ User.prototype.sign = function () {
     }, _callee30, this);
   }));
 
-  return function (_x58, _x59) {
+  return function (_x59, _x60) {
     return _ref34.apply(this, arguments);
   };
 }();
@@ -47382,7 +47384,7 @@ User.prototype.isRevoked = function () {
     }, _callee31, this);
   }));
 
-  return function (_x62, _x63, _x64) {
+  return function (_x63, _x64, _x65) {
     return _ref36.apply(this, arguments);
   };
 }();User.prototype.verifyCertificate = function () {
@@ -47485,7 +47487,7 @@ User.prototype.isRevoked = function () {
                 }, _callee33, this);
               }));
 
-              return function (_x76) {
+              return function (_x77) {
                 return _ref39.apply(this, arguments);
               };
             }()));
@@ -47504,7 +47506,7 @@ User.prototype.isRevoked = function () {
     }, _callee34, this);
   }));
 
-  return function (_x72, _x73, _x74) {
+  return function (_x73, _x74, _x75) {
     return _ref38.apply(this, arguments);
   };
 }();
@@ -47552,7 +47554,7 @@ User.prototype.verifyAllCertifications = function () {
                 }, _callee35, this);
               }));
 
-              return function (_x79) {
+              return function (_x80) {
                 return _ref41.apply(this, arguments);
               };
             }())));
@@ -47565,7 +47567,7 @@ User.prototype.verifyAllCertifications = function () {
     }, _callee36, this);
   }));
 
-  return function (_x77, _x78) {
+  return function (_x78, _x79) {
     return _ref40.apply(this, arguments);
   };
 }();
@@ -47671,7 +47673,7 @@ User.prototype.verify = function () {
                 }, _callee37, this);
               }));
 
-              return function (_x81) {
+              return function (_x82) {
                 return _ref43.apply(this, arguments);
               };
             }()));
@@ -47691,7 +47693,7 @@ User.prototype.verify = function () {
     }, _callee38, this);
   }));
 
-  return function (_x80) {
+  return function (_x81) {
     return _ref42.apply(this, arguments);
   };
 }();
@@ -47733,7 +47735,7 @@ User.prototype.update = function () {
                 }, _callee39, this);
               }));
 
-              return function (_x84) {
+              return function (_x85) {
                 return _ref45.apply(this, arguments);
               };
             }());
@@ -47756,7 +47758,7 @@ User.prototype.update = function () {
     }, _callee40, this);
   }));
 
-  return function (_x82, _x83) {
+  return function (_x83, _x84) {
     return _ref44.apply(this, arguments);
   };
 }();
@@ -47806,7 +47808,7 @@ SubKey.generate = function () {
     }, _callee41, this);
   }));
 
-  return function (_x85) {
+  return function (_x86) {
     return _ref46.apply(this, arguments);
   };
 }();
@@ -47863,7 +47865,7 @@ SubKey.bindSignature = function () {
     }, _callee42, this);
   }));
 
-  return function (_x86, _x87) {
+  return function (_x87, _x88) {
     return _ref47.apply(this, arguments);
   };
 }();
@@ -47907,7 +47909,7 @@ SubKey.prototype.bindSignature = function () {
     }, _callee43, this);
   }));
 
-  return function (_x89) {
+  return function (_x90) {
     return _ref48.apply(this, arguments);
   };
 }();
@@ -47957,7 +47959,7 @@ SubKey.prototype.isRevoked = function () {
     }, _callee44, this);
   }));
 
-  return function (_x91, _x92, _x93) {
+  return function (_x92, _x93, _x94) {
     return _ref49.apply(this, arguments);
   };
 }();
@@ -48003,7 +48005,7 @@ SubKey.prototype.verify = function () {
     }, _callee45, this);
   }));
 
-  return function (_x96) {
+  return function (_x97) {
     return _ref50.apply(this, arguments);
   };
 }();
@@ -48102,7 +48104,7 @@ SubKey.prototype.verifyEx = function () {
     }, _callee46, this);
   }));
 
-  return function (_x98, _x99) {
+  return function (_x99, _x100) {
     return _ref51.apply(this, arguments);
   };
 }();
@@ -48231,7 +48233,7 @@ SubKey.prototype.update = function () {
                 }, _callee47, this);
               }));
 
-              return function (_x104) {
+              return function (_x105) {
                 return _ref53.apply(this, arguments);
               };
             }());
@@ -48250,7 +48252,7 @@ SubKey.prototype.update = function () {
     }, _callee48, this);
   }));
 
-  return function (_x102, _x103) {
+  return function (_x103, _x104) {
     return _ref52.apply(this, arguments);
   };
 }();
@@ -48307,7 +48309,7 @@ SubKey.prototype.revoke = function () {
     }, _callee49, this);
   }));
 
-  return function (_x105) {
+  return function (_x106) {
     return _ref54.apply(this, arguments);
   };
 }();

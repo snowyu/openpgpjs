@@ -34485,7 +34485,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v3.1.3",
+  versionstring: "OpenPGP.js v3.2.0-dev",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -45238,6 +45238,7 @@ var isAeadSupported = exports.isAeadSupported = function () {
 
 exports.Key = Key;
 exports.User = User;
+exports.SubKey = SubKey;
 exports.read = read;
 exports.readArmored = readArmored;
 
@@ -46977,6 +46978,7 @@ Key.prototype.verifyAllUsers = function () {
  * @param {Integer} options.numBits (optional) number of bits for the key creation.
  * @param  {String} options.curve (optional) elliptic curve for ECC keys
  * @param  {Date} options.date  Override the creation date of the key and the key signatures
+ * @param  {Boolean} options.addSubkey  (optional) defaults to true, add the subkey into the key.
  * @param  {Object} userId                   (optional) user ID
  * @returns {Promise<module:key.SubKey>} return the subkey if successful.
  * @async
@@ -47000,21 +47002,27 @@ Key.prototype.generateSubkey = function () {
             }
 
             options = sanitizeKeyOptions(options, defaultOptions);
-            _context26.t0 = this;
-            _context26.next = 7;
+            _context26.next = 6;
             return SubKey.generate(options);
 
-          case 7:
-            _context26.t1 = _context26.sent;
-            _context26.t2 = options;
-            _context26.next = 11;
-            return _context26.t0.addSubkey.call(_context26.t0, _context26.t1, _context26.t2);
+          case 6:
+            result = _context26.sent;
+
+            if (!(options.addSubkey !== false)) {
+              _context26.next = 11;
+              break;
+            }
+
+            _context26.next = 10;
+            return this.addSubkey(result, options);
+
+          case 10:
+            result = _context26.sent;
 
           case 11:
-            result = _context26.sent;
             return _context26.abrupt('return', result);
 
-          case 13:
+          case 12:
           case 'end':
             return _context26.stop();
         }

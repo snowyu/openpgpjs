@@ -2401,6 +2401,31 @@ VYGdb3eNlV8CfoEC
     expect(await newSubkey.verify(privateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
   });
 
+  it('create a new rsa subkey and do not add into key', async function() {
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    await privateKey.decrypt('hello world');
+    const total = privateKey.subKeys.length;
+    const newSubkey = await privateKey.generateSubkey({addSubkey: false});
+    expect(newSubkey).to.exist;
+    expect(privateKey.subKeys.length).to.be.equal(total);
+    const subkeyN = newSubkey.keyPacket.params[0];
+    const pkN = privateKey.primaryKey.params[0];
+    expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
+    expect(newSubkey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
+  });
+
+  it('create a new ec subkey and do not add into key', async function() {
+    const privateKey = openpgp.key.readArmored(priv_key_rsa).keys[0];
+    privateKey.subKeys = [];
+    await privateKey.decrypt('hello world');
+    const total = privateKey.subKeys.length;
+    const newSubkey = await privateKey.generateSubkey({curve: 'ed25519', addSubkey: false});
+    expect(newSubkey).to.exist;
+    expect(privateKey.subKeys.length).to.be.equal(total);
+    expect(newSubkey.keyPacket.params[0].getName()).to.be.equal(openpgp.enums.curve.curve25519);
+    expect(newSubkey.getAlgorithmInfo().algorithm).to.be.equal('ecdh');
+  });
+
   it('sign/verify data with the new subkey correctly', async function() {
     const userId = 'test <a@b.com>';
     const opt = {curve: 'curve25519', userIds: [userId], subkeys:[]};

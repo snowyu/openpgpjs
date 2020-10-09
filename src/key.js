@@ -828,6 +828,7 @@ Key.prototype.verifyAllUsers = async function(keys) {
  * @param {Integer} options.numBits (optional) number of bits for the key creation.
  * @param  {String} options.curve (optional) elliptic curve for ECC keys
  * @param  {Date} options.date  Override the creation date of the key and the key signatures
+ * @param  {Boolean} options.addSubkey  (optional) defaults to true, add the subkey into the key.
  * @param  {Object} userId                   (optional) user ID
  * @returns {Promise<module:key.SubKey>} return the subkey if successful.
  * @async
@@ -846,7 +847,8 @@ Key.prototype.generateSubkey = async function(options){
   }
 
   options = sanitizeKeyOptions(options, defaultOptions);
-  const result = await this.addSubkey(await SubKey.generate(options), options);
+  let result = await SubKey.generate(options);
+  if (options.addSubkey !== false) result = await this.addSubkey(result, options);
   return result;
 };
 
@@ -1213,7 +1215,7 @@ User.prototype.update = async function(user, primaryKey) {
  * @class
  * @classdesc Class that represents a subkey packet and the relevant signatures.
  */
-function SubKey(subKeyPacket) {
+export function SubKey(subKeyPacket) {
   if (!(this instanceof SubKey)) {
     return new SubKey(subKeyPacket);
   }

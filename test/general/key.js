@@ -2484,4 +2484,14 @@ VYGdb3eNlV8CfoEC
     expect(keys).to.be.string('["-----BEGIN PGP PUBLIC KEY BLOCK-----');
   });
 
+  it('clone key', async function() {
+    const pubKey = openpgp.key.readArmored(pub_key_arm2).keys[0];
+    const privKey = openpgp.key.readArmored(priv_key_arm2).keys[0];
+    await privKey.decrypt('hello world');
+    let result = pubKey.clone();
+    expect(result.toJSON()).to.be.string(pubKey.toJSON());
+    result = privKey.clone();
+    expect(result.toJSON()).to.be.string(privKey.toJSON());
+  });
+
 }

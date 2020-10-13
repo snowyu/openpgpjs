@@ -1,4 +1,5 @@
-* add optional addSubkey(defaults to true) option to Key::generateSubkey method
++ add Key::clone method to clone itself as a new key
++ add optional addSubkey(defaults to true) option to Key::generateSubkey method
 * fix(key) the verifyAllUsers should verify userAttribute too.
   * [Broken]: return user instead of userid, and adding index of users of result
 + add userAttributes option to generateKey

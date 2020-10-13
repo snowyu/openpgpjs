@@ -152,6 +152,14 @@ Key.prototype.toPacketlist = function() {
 };
 
 /**
+ * clone itself as a new key.
+ * @returns {Key}
+ */
+Key.prototype.clone = function() {
+  return new Key(this.toPacketlist());
+};
+
+/**
  * Returns packetlist containing all public or private subkey packets matching keyId;
  * If keyId is not present, returns all subkey packets.
  * @param  {type/keyid} keyId
@@ -1013,8 +1021,8 @@ User.prototype.toPacketlist = function() {
  * Signs user
  *  use the privateKeys to sign the user
  * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey  The primary key packet
- * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
+ *          module:packet.PublicKey} primaryKey  The primary key packet to be signed
+ * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys used for signing
  * @returns {Promise<module:key.Key>}             New user with new certificate signatures
  * @async
  */
